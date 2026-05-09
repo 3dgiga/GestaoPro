@@ -227,6 +227,18 @@
     }
     .budget-order-summary strong{color:var(--text)}
 
+    .cep-status{
+      display:block;
+      min-height:16px;
+      margin-top:6px;
+      font-size:11px;
+      color:var(--text-muted);
+      line-height:1.35;
+    }
+    .cep-status.info{color:#93c5fd}
+    .cep-status.success{color:#86efac}
+    .cep-status.error{color:#fca5a5}
+
     .btn{
       padding:12px 22px;border:none;border-radius:10px;font-size:14px;font-weight:600;
       font-family:'Inter',sans-serif;cursor:pointer;transition:.2s;
@@ -773,23 +785,24 @@
                 <input type="text" id="cTel" placeholder="(00) 00000-0000" maxlength="15" oninput="maskPhone(this)" required>
               </div>
               <div class="form-group">
-                <label>Rua</label>
-                <input type="text" id="cRua">
+                <label>CEP</label>
+                <input type="text" id="cCep" placeholder="00000-000" maxlength="9" oninput="handleClientCepInput(this)" onblur="buscarCepCliente()" autocomplete="postal-code">
+                <small class="cep-status" id="cCepStatus">Digite o CEP para preencher rua e bairro automaticamente.</small>
               </div>
               <div class="form-group">
-                <label>Número</label>
-                <input type="text" id="cNum">
+                <label>Rua</label>
+                <input type="text" id="cRua" autocomplete="address-line1">
               </div>
             </div>
 
             <div class="form-row">
               <div class="form-group">
-                <label>Bairro</label>
-                <input type="text" id="cBairro">
+                <label>Número</label>
+                <input type="text" id="cNum" autocomplete="address-line2">
               </div>
               <div class="form-group">
-                <label>CEP</label>
-                <input type="text" id="cCep" placeholder="00000-000" maxlength="9" oninput="maskCep(this)">
+                <label>Bairro</label>
+                <input type="text" id="cBairro">
               </div>
               <div class="form-group" style="grid-column: span 2;">
                 <label>Observações</label>
@@ -1162,6 +1175,79 @@
       let v = el.value.replace(/\D/g,'').slice(0,8);
       if(v.length > 5) v = v.replace(/^(\d{5})(\d{0,3}).*/, '$1-$2');
       el.value = v;
+    }
+
+    let cepLookupTimer = null;
+    let lastCepLookup = '';
+
+    function setCepStatus(msg='', type=''){
+      const el = document.getElementById('cCepStatus');
+      if(!el) return;
+      el.textContent = msg || 'Digite o CEP para preencher rua e bairro automaticamente.';
+      el.className = 'cep-status' + (type ? ' ' + type : '');
+    }
+
+    function handleClientCepInput(el){
+      maskCep(el);
+      const digits = el.value.replace(/\D/g, '');
+
+      clearTimeout(cepLookupTimer);
+
+      if(digits.length < 8){
+        lastCepLookup = '';
+        setCepStatus('Digite o CEP completo para buscar o endereço.', 'info');
+        return;
+      }
+
+      cepLookupTimer = setTimeout(() => buscarCepCliente(digits), 450);
+    }
+
+    async function buscarCepCliente(cepParam=''){
+      const cepEl = document.getElementById('cCep');
+      const cep = String(cepParam || cepEl?.value || '').replace(/\D/g, '').slice(0, 8);
+
+      if(!cep){
+        setCepStatus();
+        return;
+      }
+
+      if(cep.length !== 8){
+        setCepStatus('CEP incompleto. Use 8 números.', 'error');
+        return;
+      }
+
+      if(cep === lastCepLookup){
+        return;
+      }
+
+      lastCepLookup = cep;
+      setCepStatus('Buscando endereço pelo CEP...', 'info');
+
+      try{
+        const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+        if(!response.ok) throw new Error('Falha na consulta do CEP');
+
+        const data = await response.json();
+        if(data.erro){
+          setCepStatus('CEP não encontrado. Preencha o endereço manualmente.', 'error');
+          return;
+        }
+
+        const rua = document.getElementById('cRua');
+        const bairro = document.getElementById('cBairro');
+        const numero = document.getElementById('cNum');
+
+        if(rua && data.logradouro) rua.value = data.logradouro;
+        if(bairro && data.bairro) bairro.value = data.bairro;
+
+        const cidadeUf = [data.localidade, data.uf].filter(Boolean).join('/');
+        setCepStatus(cidadeUf ? `Endereço encontrado: ${cidadeUf}. Complete o número.` : 'Endereço encontrado. Complete o número.', 'success');
+        numero?.focus();
+      }catch(err){
+        console.error(err);
+        lastCepLookup = '';
+        setCepStatus('Não foi possível consultar o CEP agora. Você pode preencher manualmente.', 'error');
+      }
     }
 
     function normalizePhoneForWhatsApp(phone){
@@ -1665,6 +1751,8 @@
         btn.style.justifyContent = 'center';
       }
       if(cancel) cancel.style.display = 'none';
+      lastCepLookup = '';
+      setCepStatus();
     }
 
     function cancelClientEdit(){
@@ -1687,6 +1775,8 @@
       document.getElementById('cBairro').value = c.bairro || '';
       document.getElementById('cCep').value = c.cep || '';
       document.getElementById('cObs').value = c.obs || '';
+      lastCepLookup = String(c.cep || '').replace(/\D/g, '');
+      setCepStatus(c.cep ? 'Endereço carregado do cadastro. Altere o CEP para buscar novamente.' : 'Digite o CEP para preencher rua e bairro automaticamente.', c.cep ? 'info' : '');
 
       const title = document.getElementById('clientFormTitle');
       const btn = document.getElementById('clientSubmitBtn');
