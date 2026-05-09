@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>GestãoPro Studio Giga</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
@@ -406,15 +407,15 @@
         <h1>GestãoPro Studio Giga</h1>
         <p>Sistema de Gerenciamento Empresarial</p>
       </div>
-      <div class="login-error" id="loginErr">Usuário ou senha incorretos!</div>
+      <div class="login-error" id="loginErr">E-mail ou senha incorretos.</div>
       <form onsubmit="return handleLogin(event)">
         <div class="form-group">
-          <label>Usuário</label>
-          <input type="text" id="logUser" placeholder="Digite seu usuário" required autocomplete="off">
+          <label>E-mail</label>
+          <input type="email" id="logUser" placeholder="Digite seu e-mail" required autocomplete="email">
         </div>
         <div class="form-group">
           <label>Senha</label>
-          <input type="password" id="logPass" placeholder="Digite sua senha" required autocomplete="off">
+          <input type="password" id="logPass" placeholder="Digite sua senha" required autocomplete="current-password">
         </div>
         <button type="submit" class="btn btn-primary">🔐 Entrar no Sistema</button>
       </form>
@@ -429,8 +430,8 @@
       </div>
       <div class="header-right">
         <div class="user-badge">
-          <div style="width:28px;height:28px;background:linear-gradient(135deg,var(--primary),var(--primary-light));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">A</div>
-          <span>Admin</span>
+          <div id="userInitial" style="width:28px;height:28px;background:linear-gradient(135deg,var(--primary),var(--primary-light));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">A</div>
+          <span id="userEmail">Admin</span>
         </div>
         <button class="btn btn-sm btn-outline" onclick="handleLogout()">🚪 Sair</button>
       </div>
@@ -758,6 +759,17 @@
   </div>
 
   <script>
+    const SUPABASE_URL = 'https://yoibfgcqvhdynedggvvs.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_4_JKmFF4DLNJr6AAitd7yg_sZ8Ys5xf';
+
+    const SB = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true
+      }
+    });
+
     const STATUS = {
       aguardando: { l:'Aguardando', c:'aguardando' },
       producao: { l:'Em Produção', c:'producao' },
@@ -766,28 +778,24 @@
     };
 
     let D = { cli: [], ord: [] };
+    let currentUser = null;
     let shVendedor = 0;
     let financeChart = null;
-
-    // Login local persistente: mantém este navegador/dispositivo logado até clicar em Sair.
-    // Observação: para segurança real e dados online entre dispositivos, use Supabase/Firebase.
-    const AUTH_KEY = 'gpGiga_auth_ok';
-    const OWNER_USER = 'admin';
-    const OWNER_PASS = '1234';
-
-    function showApp(){
-      document.getElementById('loginScreen').style.display = 'none';
-      document.getElementById('mainApp').style.display = 'block';
-      updateAll();
-    }
-
-    function showLogin(){
-      document.getElementById('mainApp').style.display = 'none';
-      document.getElementById('loginScreen').style.display = 'flex';
-    }
+    let last3DQuote = '';
+    let last3DBudget = null;
 
     function fmt(v){
       return Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function esc(v){
+      return String(v ?? '').replace(/[&<>'"]/g, ch => ({
+        '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;'
+      }[ch]));
+    }
+
+    function idAttr(v){
+      return String(v ?? '').replace(/'/g, "\\'");
     }
 
     function toast(msg, type='success'){
@@ -795,9 +803,36 @@
       const x = document.createElement('div');
       const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
       x.className = 'toast ' + type;
-      x.innerHTML = `${icon} ${msg}`;
+      x.innerHTML = `${icon} ${esc(msg)}`;
       c.appendChild(x);
       setTimeout(() => x.remove(), 2800);
+    }
+
+    function showLoadingLogin(msg='Carregando...'){
+      const btn = document.querySelector('#loginScreen button[type="submit"]');
+      if(btn){ btn.disabled = true; btn.textContent = msg; }
+    }
+
+    function resetLoginButton(){
+      const btn = document.querySelector('#loginScreen button[type="submit"]');
+      if(btn){ btn.disabled = false; btn.textContent = '🔐 Entrar no Sistema'; }
+    }
+
+    function showApp(){
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('mainApp').style.display = 'block';
+      const email = currentUser?.email || 'Admin';
+      const initial = email?.[0]?.toUpperCase() || 'A';
+      const emailEl = document.getElementById('userEmail');
+      const initialEl = document.getElementById('userInitial');
+      if(emailEl) emailEl.textContent = email;
+      if(initialEl) initialEl.textContent = initial;
+      updateAll();
+    }
+
+    function showLogin(){
+      document.getElementById('mainApp').style.display = 'none';
+      document.getElementById('loginScreen').style.display = 'flex';
     }
 
     function maskPhone(el){
@@ -816,6 +851,13 @@
       el.value = v;
     }
 
+    function dbDateToBR(str){
+      if(!str) return new Date().toLocaleDateString('pt-BR');
+      const dt = new Date(str);
+      if(Number.isNaN(dt.getTime())) return new Date().toLocaleDateString('pt-BR');
+      return dt.toLocaleDateString('pt-BR');
+    }
+
     function parseBRDate(str){
       if(!str) return null;
       const [d,m,y] = str.split('/');
@@ -830,8 +872,36 @@
       return `${y}-${m}-${d}`;
     }
 
+    function mapClient(row){
+      return {
+        id: row.id,
+        nom: row.nome || '',
+        tel: row.telefone || '',
+        rua: row.rua || '',
+        num: row.numero || '',
+        bairro: row.bairro || '',
+        cep: row.cep || '',
+        obs: row.observacoes || '',
+        d: dbDateToBR(row.criado_em)
+      };
+    }
+
+    function mapOrder(row){
+      return {
+        id: row.id,
+        cliId: row.cliente_id,
+        prod: row.produto || '',
+        qtd: Number(row.quantidade || 1),
+        val: Number(row.valor_unitario || 0),
+        total: Number(row.valor_total ?? ((row.quantidade || 1) * (row.valor_unitario || 0))),
+        obs: row.observacoes || '',
+        status: row.status || 'aguardando',
+        d: dbDateToBR(row.criado_em)
+      };
+    }
+
     function getClient(id){
-      return D.cli.find(c => c.id === id);
+      return D.cli.find(c => String(c.id) === String(id));
     }
 
     function getClientName(id){
@@ -843,45 +913,87 @@
       return [c.rua, c.num, c.bairro, c.cep].filter(Boolean).join(', ');
     }
 
-    function loadData(){
-      const s = localStorage.getItem('gpGiga_v2');
-      if(s){
-        try{
-          D = JSON.parse(s);
-          if(!D.cli) D.cli = [];
-          if(!D.ord) D.ord = [];
-        }catch(e){
-          D = { cli: [], ord: [] };
-        }
+    async function loadData(){
+      if(!currentUser){
+        D = { cli: [], ord: [] };
+        return;
       }
+
+      const [clientesRes, pedidosRes] = await Promise.all([
+        SB.from('clientes').select('*').order('criado_em', { ascending: false }),
+        SB.from('pedidos').select('*').order('criado_em', { ascending: false })
+      ]);
+
+      if(clientesRes.error){
+        console.error(clientesRes.error);
+        toast('Erro ao carregar clientes. Confira se a tabela e RLS foram criadas.', 'error');
+      }
+      if(pedidosRes.error){
+        console.error(pedidosRes.error);
+        toast('Erro ao carregar pedidos. Confira se a tabela e RLS foram criadas.', 'error');
+      }
+
+      D.cli = (clientesRes.data || []).map(mapClient);
+      D.ord = (pedidosRes.data || []).map(mapOrder);
+    }
+
+    async function refreshData(){
+      await loadData();
+      updateAll();
     }
 
     function saveData(){
-      localStorage.setItem('gpGiga_v2', JSON.stringify(D));
+      // Dados principais agora ficam no Supabase. Mantido só para compatibilidade com chamadas antigas.
     }
 
-    function handleLogin(e){
+    async function handleLogin(e){
       e.preventDefault();
-      const u = document.getElementById('logUser').value.trim();
-      const p = document.getElementById('logPass').value;
+      const email = document.getElementById('logUser').value.trim();
+      const password = document.getElementById('logPass').value;
+      const err = document.getElementById('loginErr');
 
-      if(u === OWNER_USER && p === OWNER_PASS){
-        localStorage.setItem(AUTH_KEY, '1');
-        showApp();
-        toast('Bem-vindo ao GestãoPro Studio Giga!');
-      }else{
-        document.getElementById('loginErr').style.display = 'block';
-        setTimeout(() => document.getElementById('loginErr').style.display = 'none', 3000);
+      err.style.display = 'none';
+      showLoadingLogin('Entrando...');
+
+      const { data, error } = await SB.auth.signInWithPassword({ email, password });
+
+      resetLoginButton();
+
+      if(error){
+        console.error(error);
+        err.textContent = 'E-mail ou senha incorretos.';
+        err.style.display = 'block';
+        setTimeout(() => err.style.display = 'none', 3500);
+        return false;
       }
+
+      currentUser = data.user;
+      await loadData();
+      showApp();
+      toast('Bem-vindo ao GestãoPro Studio Giga!');
       return false;
     }
 
-    function handleLogout(){
-      localStorage.removeItem(AUTH_KEY);
+    async function handleLogout(){
+      await SB.auth.signOut();
+      currentUser = null;
+      D = { cli: [], ord: [] };
       showLogin();
       document.getElementById('logUser').value = '';
       document.getElementById('logPass').value = '';
       toast('Sessão encerrada', 'info');
+    }
+
+    async function checkSession(){
+      const { data, error } = await SB.auth.getSession();
+      if(error){ console.error(error); }
+      currentUser = data?.session?.user || null;
+      if(currentUser){
+        await loadData();
+        showApp();
+      }else{
+        showLogin();
+      }
     }
 
     function nav(tab, btn){
@@ -894,45 +1006,54 @@
       updateAll();
     }
 
-    function addClient(e){
+    async function addClient(e){
       e.preventDefault();
+      if(!currentUser){ toast('Faça login primeiro.', 'error'); return; }
 
-      const c = {
-        id: Date.now(),
-        nom: document.getElementById('cNom').value.trim(),
-        tel: document.getElementById('cTel').value.trim(),
+      const payload = {
+        user_id: currentUser.id,
+        nome: document.getElementById('cNom').value.trim(),
+        telefone: document.getElementById('cTel').value.trim(),
         rua: document.getElementById('cRua').value.trim(),
-        num: document.getElementById('cNum').value.trim(),
+        numero: document.getElementById('cNum').value.trim(),
         bairro: document.getElementById('cBairro').value.trim(),
         cep: document.getElementById('cCep').value.trim(),
-        obs: document.getElementById('cObs').value.trim(),
-        d: new Date().toLocaleDateString('pt-BR')
+        observacoes: document.getElementById('cObs').value.trim()
       };
 
-      D.cli.push(c);
-      saveData();
+      const { error } = await SB.from('clientes').insert(payload);
+      if(error){
+        console.error(error);
+        toast('Erro ao cadastrar cliente.', 'error');
+        return;
+      }
+
       e.target.reset();
-      toast(`Cliente "${c.nom}" cadastrado!`);
-      updateAll();
+      toast(`Cliente "${payload.nome}" cadastrado!`);
+      await refreshData();
     }
 
-    function delClient(id){
-      const hasOrders = D.ord.some(o => o.cliId === id);
+    async function delClient(id){
+      const hasOrders = D.ord.some(o => String(o.cliId) === String(id));
       if(hasOrders){
         toast('Não é possível excluir cliente com pedidos vinculados.', 'error');
         return;
       }
       if(confirm('Excluir cliente?')){
-        D.cli = D.cli.filter(c => c.id !== id);
-        saveData();
+        const { error } = await SB.from('clientes').delete().eq('id', id);
+        if(error){
+          console.error(error);
+          toast('Erro ao excluir cliente.', 'error');
+          return;
+        }
         toast('Cliente removido', 'info');
-        updateAll();
+        await refreshData();
       }
     }
 
     function renderClients(q=''){
       const f = D.cli.filter(c =>
-        c.nom.toLowerCase().includes(q) ||
+        (c.nom || '').toLowerCase().includes(q) ||
         (c.tel || '').toLowerCase().includes(q) ||
         (c.bairro || '').toLowerCase().includes(q)
       );
@@ -967,15 +1088,15 @@
             <tbody>
               ${f.map(c => `
                 <tr>
-                  <td><strong>${c.nom || '-'}</strong></td>
-                  <td>${c.tel || '-'}</td>
-                  <td>${c.rua || '-'}</td>
-                  <td>${c.num || '-'}</td>
-                  <td>${c.bairro || '-'}</td>
-                  <td>${c.cep || '-'}</td>
-                  <td>${c.obs || '-'}</td>
+                  <td><strong>${esc(c.nom || '-')}</strong></td>
+                  <td>${esc(c.tel || '-')}</td>
+                  <td>${esc(c.rua || '-')}</td>
+                  <td>${esc(c.num || '-')}</td>
+                  <td>${esc(c.bairro || '-')}</td>
+                  <td>${esc(c.cep || '-')}</td>
+                  <td>${esc(c.obs || '-')}</td>
                   <td>
-                    <button class="btn btn-sm btn-danger" onclick="delClient(${c.id})">🗑️</button>
+                    <button class="btn btn-sm btn-danger" onclick="delClient('${idAttr(c.id)}')">🗑️</button>
                   </td>
                 </tr>
               `).join('')}
@@ -986,7 +1107,7 @@
     }
 
     function fillSelects(){
-      const opts = '<option value="">Selecione...</option>' + D.cli.map(c => `<option value="${c.id}">${c.nom}</option>`).join('');
+      const opts = '<option value="">Selecione...</option>' + D.cli.map(c => `<option value="${esc(c.id)}">${esc(c.nom)}</option>`).join('');
       document.getElementById('oCli').innerHTML = opts;
     }
 
@@ -1006,7 +1127,7 @@
     }
 
     function deliveryWhatsApp(id){
-      const o = D.ord.find(x => x.id === id);
+      const o = D.ord.find(x => String(x.id) === String(id));
       if(!o) return;
 
       const c = getClient(o.cliId);
@@ -1024,90 +1145,84 @@
         return;
       }
 
-      const msg = `🚚 *ENTREGA - GestãoPro Studio Giga*
-
-` +
-        `👤 *Cliente:* ${c.nom || '-'}
-` +
-        `📞 *Telefone:* ${c.tel || '-'}
-
-` +
-        `📦 *Pedido:* #${o.id}
-` +
-        `🛍️ *Produto:* ${o.prod || '-'}
-` +
-        `🔢 *Quantidade:* ${o.qtd || 1}
-` +
-        `💰 *Valor unitário:* R$ ${fmt(o.val)}
-` +
-        `💵 *Total:* R$ ${fmt(total)}
-` +
-        `📌 *Status:* ${STATUS[o.status]?.l || o.status}
-` +
-        `📝 *Obs do pedido:* ${o.obs || '-'}
-
-` +
-        `📍 *Endereço:* ${address}
-` +
-        `🗺️ *Abrir no Google Maps:* ${maps}
-
-` +
+      const msg = `🚚 *ENTREGA - GestãoPro Studio Giga*\n\n` +
+        `👤 *Cliente:* ${c.nom || '-'}\n` +
+        `📞 *Telefone:* ${c.tel || '-'}\n\n` +
+        `📦 *Pedido:* #${String(o.id).slice(0,8)}\n` +
+        `🛍️ *Produto:* ${o.prod || '-'}\n` +
+        `🔢 *Quantidade:* ${o.qtd || 1}\n` +
+        `💰 *Valor unitário:* R$ ${fmt(o.val)}\n` +
+        `💵 *Total:* R$ ${fmt(total)}\n` +
+        `📌 *Status:* ${STATUS[o.status]?.l || o.status}\n` +
+        `📝 *Obs do pedido:* ${o.obs || '-'}\n\n` +
+        `📍 *Endereço:* ${address}\n` +
+        `🗺️ *Abrir no Google Maps:* ${maps}\n\n` +
         `✅ Favor confirmar quando a entrega for finalizada.`;
 
       window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
     }
 
-    function addOrder(e){
+    async function addOrder(e){
       e.preventDefault();
+      if(!currentUser){ toast('Faça login primeiro.', 'error'); return; }
 
-      const cliId = parseInt(document.getElementById('oCli').value);
+      const cliId = document.getElementById('oCli').value;
       if(!cliId){
         toast('Selecione um cliente.', 'error');
         return;
       }
 
-      const o = {
-        id: Date.now(),
-        cliId,
-        prod: document.getElementById('oProd').value.trim(),
-        qtd: parseInt(document.getElementById('oQtd').value) || 1,
-        val: parseFloat(document.getElementById('oVal').value) || 0,
-        total: calcOrderTotal(),
-        obs: document.getElementById('oObs').value.trim(),
-        status: 'aguardando',
-        d: new Date().toLocaleDateString('pt-BR')
+      const payload = {
+        user_id: currentUser.id,
+        cliente_id: cliId,
+        produto: document.getElementById('oProd').value.trim(),
+        quantidade: parseInt(document.getElementById('oQtd').value) || 1,
+        valor_unitario: parseFloat(document.getElementById('oVal').value) || 0,
+        observacoes: document.getElementById('oObs').value.trim(),
+        status: 'aguardando'
       };
 
-      D.ord.push(o);
-      saveData();
+      const { error } = await SB.from('pedidos').insert(payload);
+      if(error){
+        console.error(error);
+        toast('Erro ao criar pedido.', 'error');
+        return;
+      }
+
       e.target.reset();
       calcOrderTotal();
       fillSelects();
       toast('Pedido criado!');
-      updateAll();
+      await refreshData();
     }
 
-    function updateOrderStatus(id, newStatus){
-      const o = D.ord.find(x => x.id === id);
-      if(!o) return;
-      o.status = newStatus;
-      saveData();
+    async function updateOrderStatus(id, newStatus){
+      const { error } = await SB.from('pedidos').update({ status: newStatus }).eq('id', id);
+      if(error){
+        console.error(error);
+        toast('Erro ao alterar status.', 'error');
+        return;
+      }
       toast(`Status alterado para "${STATUS[newStatus].l}"`, 'info');
-      updateAll();
+      await refreshData();
     }
 
-    function delOrder(id){
+    async function delOrder(id){
       if(confirm('Excluir pedido?')){
-        D.ord = D.ord.filter(o => o.id !== id);
-        saveData();
+        const { error } = await SB.from('pedidos').delete().eq('id', id);
+        if(error){
+          console.error(error);
+          toast('Erro ao remover pedido.', 'error');
+          return;
+        }
         toast('Pedido removido', 'info');
-        updateAll();
+        await refreshData();
       }
     }
 
     function renderOrders(q=''){
       const f = D.ord.filter(o =>
-        o.prod.toLowerCase().includes(q) ||
+        (o.prod || '').toLowerCase().includes(q) ||
         getClientName(o.cliId).toLowerCase().includes(q) ||
         (o.obs || '').toLowerCase().includes(q)
       );
@@ -1120,23 +1235,23 @@
       }
 
       tb.innerHTML = f.map((o, i) => `
-        <tr class="order-row ${o.status}">
+        <tr class="order-row ${esc(o.status)}">
           <td>${i + 1}</td>
-          <td><strong>${getClientName(o.cliId)}</strong></td>
-          <td>${o.prod}</td>
-          <td>${o.qtd}</td>
+          <td><strong>${esc(getClientName(o.cliId))}</strong></td>
+          <td>${esc(o.prod)}</td>
+          <td>${esc(o.qtd)}</td>
           <td style="color:var(--text-muted);font-weight:600">R$ ${fmt(o.val)}</td>
           <td style="color:var(--success);font-weight:800">R$ ${fmt(o.total ?? (Number(o.val || 0) * Number(o.qtd || 1)))}</td>
           <td>
-            <select onchange="updateOrderStatus(${o.id}, this.value)" class="mini-select status-select ${o.status}">
+            <select onchange="updateOrderStatus('${idAttr(o.id)}', this.value)" class="mini-select status-select ${esc(o.status)}">
               ${Object.keys(STATUS).map(k => `<option value="${k}" ${o.status === k ? 'selected' : ''}>${STATUS[k].l}</option>`).join('')}
             </select>
           </td>
-          <td style="font-size:12px;color:var(--text-muted)">${o.d}</td>
-          <td>${o.obs || '-'}</td>
+          <td style="font-size:12px;color:var(--text-muted)">${esc(o.d)}</td>
+          <td>${esc(o.obs || '-')}</td>
           <td style="display:flex;gap:6px;flex-wrap:wrap">
-            <button class="btn btn-sm btn-success" onclick="deliveryWhatsApp(${o.id})">🚚 Entrega</button>
-            <button class="btn btn-sm btn-danger" onclick="delOrder(${o.id})">🗑️</button>
+            <button class="btn btn-sm btn-success" onclick="deliveryWhatsApp('${idAttr(o.id)}')">🚚 Entrega</button>
+            <button class="btn btn-sm btn-danger" onclick="delOrder('${idAttr(o.id)}')">🗑️</button>
           </td>
         </tr>
       `).join('');
@@ -1181,17 +1296,8 @@
       orders.forEach(o => {
         const dt = parseBRDate(o.d);
         if(!dt) return;
-
-        let key = '';
-        if(filter === 'dia'){
-          key = dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-        } else if(filter === 'semana' || filter === 'personalizado'){
-          key = dt.toLocaleDateString('pt-BR');
-        } else {
-          key = dt.toLocaleDateString('pt-BR');
-        }
-
-        map[key] = (map[key] || 0) + Number(o.total ?? (Number(o.val || 0) * Number(o.qtd || 1))); 
+        const key = dt.toLocaleDateString('pt-BR');
+        map[key] = (map[key] || 0) + Number(o.total ?? (Number(o.val || 0) * Number(o.qtd || 1)));
       });
 
       const labels = Object.keys(map);
@@ -1204,9 +1310,7 @@
       const filter = document.getElementById('chartFilter').value;
       const start = document.getElementById('chartStart').value;
       const end = document.getElementById('chartEnd').value;
-
       const { labels, values } = groupOrdersByFilter(filter, start, end);
-
       const ctx = document.getElementById('financeChart').getContext('2d');
 
       if(financeChart) financeChart.destroy();
@@ -1229,21 +1333,10 @@
         },
         options: {
           responsive: true,
-          plugins: {
-            legend: { labels: { color: '#f8fafc' } }
-          },
+          plugins: { legend: { labels: { color: '#f8fafc' } } },
           scales: {
-            x: {
-              ticks: { color: '#94a3b8' },
-              grid: { color: 'rgba(148,163,184,.1)' }
-            },
-            y: {
-              ticks: {
-                color: '#94a3b8',
-                callback: value => 'R$ ' + fmt(value)
-              },
-              grid: { color: 'rgba(148,163,184,.1)' }
-            }
+            x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(148,163,184,.1)' } },
+            y: { ticks: { color: '#94a3b8', callback: value => 'R$ ' + fmt(value) }, grid: { color: 'rgba(148,163,184,.1)' } }
           }
         }
       });
@@ -1253,8 +1346,8 @@
       const filter = document.getElementById('chartFilter').value;
       const start = document.getElementById('chartStart');
       const end = document.getElementById('chartEnd');
-
       const today = new Date();
+
       if(filter === 'personalizado'){
         start.disabled = false;
         end.disabled = false;
@@ -1264,11 +1357,8 @@
         start.disabled = true;
         end.disabled = true;
       }
-
       renderFinanceChart();
     }
-
-    let last3DQuote = '';
 
     function calc3D(){
       const h = Number(document.getElementById('3dHoras').value || 0);
@@ -1301,6 +1391,15 @@
       const unit = base + vImp + vLuc;
       const totalServico = unit * qtdPecas;
 
+      last3DBudget = {
+        user_id: currentUser?.id,
+        tipo_material: tipoMaterial,
+        horas_impressao: Number(tH.toFixed(2)),
+        prazo_estimado: prazo,
+        quantidade: qtdPecas,
+        valor_unitario: Number(unit.toFixed(2))
+      };
+
       const res = document.getElementById('3dRes');
       res.style.display = 'block';
       res.innerHTML = `
@@ -1328,10 +1427,11 @@
       quote.innerHTML = `
         <h3 style="font-size:15px;margin-bottom:6px">🧾 Orçamento para Cliente</h3>
         <p style="font-size:12px;color:var(--text-muted)">Versão limpa, sem detalhar seus custos internos.</p>
-        <div class="quote-preview">${last3DQuote.replace(/\n/g, '<br>')}</div>
+        <div class="quote-preview">${esc(last3DQuote).replace(/\n/g, '<br>')}</div>
         <div class="quote-actions">
           <button class="btn btn-sm btn-success" onclick="copy3DQuote()">📋 Copiar orçamento</button>
           <button class="btn btn-sm btn-info" onclick="send3DQuoteWhatsApp()">💬 Enviar pelo WhatsApp</button>
+          <button class="btn btn-sm btn-outline" onclick="save3DQuote()">💾 Salvar online</button>
         </div>
       `;
     }
@@ -1344,6 +1444,18 @@
     function send3DQuoteWhatsApp(){
       if(!last3DQuote){ toast('Calcule o orçamento primeiro.', 'error'); return; }
       window.open(`https://wa.me/?text=${encodeURIComponent(last3DQuote)}`, '_blank');
+    }
+
+    async function save3DQuote(){
+      if(!currentUser){ toast('Faça login primeiro.', 'error'); return; }
+      if(!last3DBudget){ toast('Calcule o orçamento primeiro.', 'error'); return; }
+      const { error } = await SB.from('orcamentos_3d').insert(last3DBudget);
+      if(error){
+        console.error(error);
+        toast('Erro ao salvar orçamento. Confira se a tabela orcamentos_3d existe.', 'error');
+        return;
+      }
+      toast('Orçamento salvo online!');
     }
 
     function setShVendedor(t){
@@ -1438,6 +1550,7 @@
 
     function createBg(){
       const bg = document.getElementById('bgAnim');
+      if(!bg || bg.children.length) return;
       for(let i = 0; i < 12; i++){
         const c = document.createElement('div');
         c.className = 'circle';
@@ -1451,8 +1564,7 @@
       }
     }
 
-    window.onload = function(){
-      loadData();
+    window.onload = async function(){
       createBg();
 
       const today = new Date();
@@ -1462,7 +1574,7 @@
       applyChartFilter();
       calcOrderTotal();
       calcShopee();
-      updateAll();
+      await checkSession();
     };
   </script>
 </body>
