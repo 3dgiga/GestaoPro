@@ -209,6 +209,23 @@
     .form-group input:focus,.form-group select:focus,.form-group textarea:focus{
       outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(79,70,229,.15);
     }
+    input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible,.nav-tab:focus-visible{
+      outline:2px solid var(--primary-light);
+      outline-offset:2px;
+      box-shadow:0 0 0 4px rgba(129,140,248,.18);
+    }
+    .budget-order-summary{
+      background:rgba(79,70,229,.10);
+      border:1px solid rgba(129,140,248,.28);
+      border-radius:10px;
+      padding:10px 12px;
+      font-size:12px;
+      color:var(--text-muted);
+      line-height:1.55;
+      margin-top:8px;
+      display:none;
+    }
+    .budget-order-summary strong{color:var(--text)}
 
     .btn{
       padding:12px 22px;border:none;border-radius:10px;font-size:14px;font-weight:600;
@@ -393,6 +410,48 @@
     .quote-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
     .quote-preview{white-space:pre-line;font-size:13px;line-height:1.65;color:var(--text);background:rgba(11,17,32,.72);border:1px solid var(--border);border-radius:12px;padding:14px;margin-top:10px}
 
+    .budget-history-card{
+      background:var(--bg-card);border:1px solid var(--border);border-radius:14px;
+      padding:16px;margin-top:18px;
+    }
+    .budget-history-top{
+      display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;
+    }
+    .budget-history-top h3{font-size:15px;margin:0}
+    .budget-sync-note{
+      background:rgba(34,197,94,.10);border:1px solid rgba(34,197,94,.28);
+      color:#bbf7d0;border-radius:10px;padding:10px 12px;font-size:12px;line-height:1.5;margin-top:10px;
+    }
+    .budget-editing-badge{
+      display:none;background:rgba(59,130,246,.14);border:1px solid rgba(59,130,246,.36);
+      color:#bfdbfe;border-radius:999px;padding:5px 10px;font-size:11px;font-weight:700;
+    }
+    .budget-editing-badge.show{display:inline-flex}
+
+
+    .delivery-modal{
+      position:fixed;inset:0;background:rgba(2,6,23,.78);
+      display:none;align-items:center;justify-content:center;z-index:2500;
+      padding:16px;backdrop-filter:blur(6px);
+    }
+    .delivery-modal.show{display:flex}
+    .delivery-modal-card{
+      width:100%;max-width:460px;background:var(--bg-card);
+      border:1px solid var(--border);border-radius:18px;padding:18px;
+      box-shadow:0 25px 70px rgba(0,0,0,.55);animation:slideUp .25s ease;
+    }
+    .delivery-modal-top{
+      display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px;
+    }
+    .delivery-modal-top h3{font-size:17px;margin-bottom:3px}
+    .delivery-modal-top p{font-size:12px;color:var(--text-muted);line-height:1.4}
+    .delivery-close{
+      width:34px;height:34px;border-radius:10px;border:1px solid var(--border);
+      background:var(--bg-input);color:var(--text);cursor:pointer;font-size:18px;
+    }
+    .delivery-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+    .delivery-actions .btn{flex:1;justify-content:center}
+
     @media (max-width:700px){
       .form-row,.calc-grid,.calc-input-row,.shopee-details{grid-template-columns:1fr}
       .header,.content,.nav-tabs{padding:10px 12px}
@@ -404,6 +463,42 @@
 <body>
   <div class="bg-animation" id="bgAnim"></div>
   <div class="toast-wrap" id="toasts"></div>
+
+  <div class="delivery-modal" id="deliveryModal" onclick="if(event.target === this) closeDeliveryModal()">
+    <div class="delivery-modal-card">
+      <div class="delivery-modal-top">
+        <div>
+          <h3>🚚 Selecionar entregador</h3>
+          <p>Escolha um entregador salvo ou cadastre um novo com nome e telefone.</p>
+        </div>
+        <button type="button" class="delivery-close" onclick="closeDeliveryModal()">×</button>
+      </div>
+
+      <div class="form-group">
+        <label>Entregador salvo</label>
+        <select id="deliveryPersonSelect" onchange="selectDeliveryPerson(this.value)">
+          <option value="">Novo entregador...</option>
+        </select>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nome</label>
+          <input type="text" id="deliveryPersonName" placeholder="Nome do entregador">
+        </div>
+        <div class="form-group">
+          <label>Telefone</label>
+          <input type="text" id="deliveryPersonPhone" placeholder="(00) 00000-0000" maxlength="15" oninput="maskPhone(this)">
+        </div>
+      </div>
+
+      <div class="delivery-actions">
+        <button type="button" class="btn btn-info" onclick="saveDeliveryPersonFromModal()">💾 Salvar</button>
+        <button type="button" class="btn btn-success" onclick="sendDeliveryToSelected()">💬 Enviar WhatsApp</button>
+      </div>
+    </div>
+  </div>
+
 
   <div id="loginScreen">
     <div class="login-container">
@@ -608,20 +703,6 @@
           </form>
         </div>
 
-        <div class="form-card">
-          <h3>🚚 Entregador</h3>
-          <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px">Cadastre o celular do entregador. Ao clicar em “Entrega”, a mensagem do pedido será enviada automaticamente para esse WhatsApp.</p>
-          <div class="form-row" style="align-items:end">
-            <div class="form-group">
-              <label>Celular do entregador</label>
-              <input type="text" id="deliveryPhone" placeholder="(00) 00000-0000" maxlength="15" oninput="maskPhone(this)">
-            </div>
-            <div class="form-group">
-              <button type="button" class="btn btn-info" style="width:100%;justify-content:center" onclick="saveDeliveryPhone()">💾 Salvar número</button>
-            </div>
-          </div>
-        </div>
-
         <div class="table-container">
           <div class="table-header">
             <h3>📋 Lista de Pedidos</h3>
@@ -698,6 +779,13 @@
 
             <div class="calc-group">
               <h4>🧾 Dados do Orçamento</h4>
+              <div class="form-group">
+                <label>Pedido vinculado</label>
+                <select id="3dPedido" onchange="applyBudgetOrderInfo()">
+                  <option value="">Selecione um pedido...</option>
+                </select>
+                <div class="budget-order-summary" id="3dPedidoResumo"></div>
+              </div>
               <div class="form-row">
                 <div class="form-group"><label>Quantidade de Peças</label><input type="number" id="3dQtdPecas" min="1" value="1"></div>
                 <div class="form-group"><label>Prazo estimado para entrega</label><input type="text" id="3dPrazo" placeholder="Ex: 3 dias úteis"></div>
@@ -707,6 +795,21 @@
             <button class="calc-btn" onclick="calc3D()">🧮 Calcular Preço Final</button>
             <div class="calc-res" id="3dRes" style="display:none"></div>
             <div class="quote-card" id="3dQuote" style="display:none"></div>
+
+            <div class="budget-history-card">
+              <div class="budget-history-top">
+                <div>
+                  <h3>📚 Histórico de Orçamentos</h3>
+                  <p style="font-size:12px;color:var(--text-muted);margin-top:3px">Busque, edite ou exclua orçamentos feitos nesta calculadora.</p>
+                </div>
+                <input class="search-box" id="budgetHistorySearch" placeholder="🔍 Buscar orçamento..." oninput="renderBudgetHistory(this.value.toLowerCase())">
+              </div>
+              <span class="budget-editing-badge" id="budgetEditingBadge">Editando orçamento salvo</span>
+              <div class="budget-sync-note">
+                Quando o orçamento estiver vinculado a um pedido, ao salvar o orçamento a quantidade e o valor unitário do pedido também serão atualizados automaticamente.
+              </div>
+              <div id="budgetHistoryList" style="margin-top:12px"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -808,9 +911,13 @@
     let financeChart = null;
     let last3DQuote = '';
     let last3DBudget = null;
+    let editingBudgetId = null;
+    const BUDGET_HISTORY_KEY = 'gestaopro_budget_history_v2';
     let editingClientId = null;
     let editingOrderId = null;
-    const DELIVERY_PHONE_KEY = 'gestaopro_delivery_phone';
+    const DELIVERY_PEOPLE_KEY = 'gestaopro_delivery_people';
+    const DELIVERY_SELECTED_KEY = 'gestaopro_delivery_selected';
+    let currentDeliveryOrderId = null;
 
     function fmt(v){
       return Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -824,6 +931,13 @@
 
     function idAttr(v){
       return String(v ?? '').replace(/'/g, "\\'");
+    }
+
+    function cleanWhatsAppMessage(text){
+      return String(text || '')
+        .replace(/^\?+\s*/gm, '')
+        .replace(/[\uFFFD]/g, '')
+        .trim();
     }
 
     function toast(msg, type='success'){
@@ -855,7 +969,6 @@
       const initialEl = document.getElementById('userInitial');
       if(emailEl) emailEl.textContent = email;
       if(initialEl) initialEl.textContent = initial;
-      loadDeliveryPhone();
       updateAll();
     }
 
@@ -889,33 +1002,165 @@
       return '';
     }
 
-    function loadDeliveryPhone(){
-      const el = document.getElementById('deliveryPhone');
-      if(!el) return;
-      el.value = localStorage.getItem(DELIVERY_PHONE_KEY) || '';
-      if(el.value) maskPhone(el);
+    function getDeliveryPeople(){
+      try{
+        const saved = JSON.parse(localStorage.getItem(DELIVERY_PEOPLE_KEY) || '[]');
+        return Array.isArray(saved) ? saved.filter(p => p && p.id && p.nome && p.telefone) : [];
+      }catch(e){
+        return [];
+      }
     }
 
-    function saveDeliveryPhone(){
-      const el = document.getElementById('deliveryPhone');
-      const raw = el?.value?.trim() || '';
-      const normalized = normalizePhoneForWhatsApp(raw);
+    function setDeliveryPeople(people){
+      localStorage.setItem(DELIVERY_PEOPLE_KEY, JSON.stringify(people || []));
+    }
 
-      if(!normalized){
-        toast('Informe um celular válido para o entregador.', 'error');
-        el?.focus();
+    function renderDeliveryPeopleSelect(selectedId=''){
+      const select = document.getElementById('deliveryPersonSelect');
+      if(!select) return;
+
+      const people = getDeliveryPeople();
+      select.innerHTML = '<option value="">Novo entregador...</option>' + people.map(p =>
+        `<option value="${esc(p.id)}">${esc(p.nome)} - ${esc(p.telefone)}</option>`
+      ).join('');
+
+      if(selectedId && people.some(p => String(p.id) === String(selectedId))){
+        select.value = selectedId;
+      }else{
+        select.value = '';
+      }
+    }
+
+    function clearDeliveryFields(){
+      const name = document.getElementById('deliveryPersonName');
+      const phone = document.getElementById('deliveryPersonPhone');
+      if(name) name.value = '';
+      if(phone) phone.value = '';
+    }
+
+    function selectDeliveryPerson(id){
+      const select = document.getElementById('deliveryPersonSelect');
+      if(select) select.value = id || '';
+
+      if(!id){
+        clearDeliveryFields();
+        document.getElementById('deliveryPersonName')?.focus();
         return;
       }
 
-      localStorage.setItem(DELIVERY_PHONE_KEY, raw);
-      toast('Celular do entregador salvo!');
+      const person = getDeliveryPeople().find(p => String(p.id) === String(id));
+      if(!person){
+        clearDeliveryFields();
+        return;
+      }
+
+      const name = document.getElementById('deliveryPersonName');
+      const phone = document.getElementById('deliveryPersonPhone');
+      if(name) name.value = person.nome || '';
+      if(phone){
+        phone.value = person.telefone || '';
+        if(phone.value) maskPhone(phone);
+      }
     }
 
-    function getDeliveryPhone(){
-      const el = document.getElementById('deliveryPhone');
-      const raw = (el?.value?.trim() || localStorage.getItem(DELIVERY_PHONE_KEY) || '').trim();
-      return { raw, normalized: normalizePhoneForWhatsApp(raw) };
+    function openDeliveryModal(orderId){
+      currentDeliveryOrderId = orderId;
+      const modal = document.getElementById('deliveryModal');
+      const people = getDeliveryPeople();
+      const selected = localStorage.getItem(DELIVERY_SELECTED_KEY) || (people[0]?.id || '');
+
+      renderDeliveryPeopleSelect(selected);
+      if(selected){
+        selectDeliveryPerson(selected);
+      }else{
+        clearDeliveryFields();
+      }
+
+      modal?.classList.add('show');
+      refreshTabNavigation();
+      setTimeout(() => {
+        const target = people.length ? document.getElementById('deliveryPersonSelect') : document.getElementById('deliveryPersonName');
+        target?.focus();
+      }, 80);
     }
+
+    function closeDeliveryModal(){
+      document.getElementById('deliveryModal')?.classList.remove('show');
+      currentDeliveryOrderId = null;
+    }
+
+    function saveDeliveryPersonFromModal(){
+      const select = document.getElementById('deliveryPersonSelect');
+      const nameEl = document.getElementById('deliveryPersonName');
+      const phoneEl = document.getElementById('deliveryPersonPhone');
+      const nome = nameEl?.value?.trim() || '';
+      const telefone = phoneEl?.value?.trim() || '';
+      const normalized = normalizePhoneForWhatsApp(telefone);
+
+      if(!nome){
+        toast('Informe o nome do entregador.', 'error');
+        nameEl?.focus();
+        return null;
+      }
+
+      if(!normalized){
+        toast('Informe um telefone válido para o entregador.', 'error');
+        phoneEl?.focus();
+        return null;
+      }
+
+      const people = getDeliveryPeople();
+      let id = select?.value || '';
+      const existingIndex = people.findIndex(p => String(p.id) === String(id));
+
+      if(!id || existingIndex < 0){
+        id = 'entregador_' + Date.now();
+        people.push({ id, nome, telefone });
+      }else{
+        people[existingIndex] = { ...people[existingIndex], nome, telefone };
+      }
+
+      setDeliveryPeople(people);
+      localStorage.setItem(DELIVERY_SELECTED_KEY, id);
+      renderDeliveryPeopleSelect(id);
+      selectDeliveryPerson(id);
+      toast('Entregador salvo!');
+
+      return { id, nome, telefone, normalized };
+    }
+
+    function sendDeliveryToSelected(){
+      if(!currentDeliveryOrderId){
+        toast('Pedido não identificado.', 'error');
+        return;
+      }
+
+      const person = saveDeliveryPersonFromModal();
+      if(!person) return;
+
+      deliveryWhatsApp(currentDeliveryOrderId, person);
+      closeDeliveryModal();
+    }
+
+    function isElementVisible(el){
+      if(!el || el.disabled) return false;
+      if(el.type === 'hidden') return false;
+      const style = window.getComputedStyle(el);
+      if(style.display === 'none' || style.visibility === 'hidden') return false;
+      return !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
+    }
+
+    function refreshTabNavigation(){
+      const fields = Array.from(document.querySelectorAll('input, select, textarea, button, [role=button], .nav-tab'))
+        .filter(isElementVisible);
+      fields.forEach((el, idx) => {
+        el.tabIndex = idx + 1;
+      });
+    }
+
+    document.addEventListener('keydown', function(e){
+      if(e.key === 'Tab') setTimeout(refreshTabNavigation, 0);
+    });
 
     function dbDateToBR(str){
       if(!str) return new Date().toLocaleDateString('pt-BR');
@@ -959,7 +1204,7 @@
         prod: row.produto || '',
         qtd: Number(row.quantidade || 1),
         val: Number(row.valor_unitario || 0),
-        total: Number(row.valor_total ?? ((row.quantidade || 1) * (row.valor_unitario || 0))),
+        total: Number((row.quantidade || 1) * (row.valor_unitario || 0)),
         obs: row.observacoes || '',
         status: row.status || 'aguardando',
         d: dbDateToBR(row.criado_em)
@@ -1070,6 +1315,7 @@
       if(tab === 'dashboard') applyChartFilter();
       if(tab === 'vendas') calcShopee();
       updateAll();
+      setTimeout(refreshTabNavigation, 0);
     }
 
     function resetClientForm(){
@@ -1247,7 +1493,260 @@
 
     function fillSelects(){
       const opts = '<option value="">Selecione...</option>' + D.cli.map(c => `<option value="${esc(c.id)}">${esc(c.nom)}</option>`).join('');
-      document.getElementById('oCli').innerHTML = opts;
+      const orderClientSelect = document.getElementById('oCli');
+      if(orderClientSelect) orderClientSelect.innerHTML = opts;
+      fillBudgetOrderSelects();
+    }
+
+    function orderTotal(o){
+      return Number(Number(o?.qtd || 1) * Number(o?.val || 0));
+    }
+
+    function fillBudgetOrderSelects(){
+      const select = document.getElementById('3dPedido');
+      if(!select) return;
+
+      const current = select.value;
+      const opts = '<option value="">Selecione um pedido...</option>' + D.ord.map(o => {
+        const label = `#${String(o.id).slice(0,8)} - ${getClientName(o.cliId)} - ${o.prod || 'Pedido'} - R$ ${fmt(orderTotal(o))}`;
+        return `<option value="${esc(o.id)}">${esc(label)}</option>`;
+      }).join('');
+
+      select.innerHTML = opts;
+      if(current && D.ord.some(o => String(o.id) === String(current))){
+        select.value = current;
+      }
+      applyBudgetOrderInfo(false);
+    }
+
+    function getBudgetOrderContext(){
+      const orderId = document.getElementById('3dPedido')?.value || '';
+      if(!orderId) return { order: null, client: null };
+      const order = D.ord.find(o => String(o.id) === String(orderId)) || null;
+      const client = order ? getClient(order.cliId) : null;
+      return { order, client };
+    }
+
+    function applyBudgetOrderInfo(updateQuantity=true){
+      const { order, client } = getBudgetOrderContext();
+      const resumo = document.getElementById('3dPedidoResumo');
+
+      if(!order){
+        if(resumo){
+          resumo.style.display = 'none';
+          resumo.innerHTML = '';
+        }
+        refreshTabNavigation();
+        return;
+      }
+
+      if(updateQuantity){
+        const qtdEl = document.getElementById('3dQtdPecas');
+        if(qtdEl) qtdEl.value = Math.max(1, Number(order.qtd || 1));
+      }
+
+      if(resumo){
+        resumo.style.display = 'block';
+        resumo.innerHTML = `
+          <strong>Cliente:</strong> ${esc(client?.nom || 'Não encontrado')}<br>
+          <strong>Produto:</strong> ${esc(order.prod || '-')}<br>
+          <strong>Pedido:</strong> #${esc(String(order.id).slice(0,8))} • <strong>Qtd:</strong> ${esc(order.qtd || 1)} • <strong>Total atual:</strong> R$ ${fmt(orderTotal(order))}
+          ${order.obs ? `<br><strong>Obs:</strong> ${esc(order.obs)}` : ''}
+        `;
+      }
+
+      refreshTabNavigation();
+    }
+
+    function openBudgetForOrder(orderId){
+      nav('custos', document.querySelectorAll('.nav-tab')[3]);
+      setTimeout(() => {
+        const select = document.getElementById('3dPedido');
+        if(select){
+          select.value = orderId;
+          applyBudgetOrderInfo(true);
+        }
+        document.getElementById('3dTipoMaterial')?.focus();
+      }, 80);
+    }
+
+    function getBudgetHistory(){
+      try{
+        return JSON.parse(localStorage.getItem(BUDGET_HISTORY_KEY) || '[]');
+      }catch(e){
+        console.error(e);
+        return [];
+      }
+    }
+
+    function setBudgetHistory(list){
+      localStorage.setItem(BUDGET_HISTORY_KEY, JSON.stringify(list));
+    }
+
+    function budgetDateLabel(iso){
+      const dt = iso ? new Date(iso) : new Date();
+      if(Number.isNaN(dt.getTime())) return new Date().toLocaleString('pt-BR');
+      return dt.toLocaleString('pt-BR');
+    }
+
+    function resetBudgetEditState(){
+      editingBudgetId = null;
+      const badge = document.getElementById('budgetEditingBadge');
+      if(badge) badge.classList.remove('show');
+      const saveBtn = document.getElementById('budgetSaveBtn');
+      if(saveBtn) saveBtn.textContent = '💾 Salvar orçamento';
+    }
+
+    function clearBudgetForm(){
+      ['3dHoras','3dMin','3dMat','3dPrecoKg','3dEnergia','3dDesgaste','3dPos','3dEmb','3dImp','3dLucro'].forEach(id => {
+        const el = document.getElementById(id);
+        if(el) el.value = '0';
+      });
+      const material = document.getElementById('3dTipoMaterial');
+      const qtd = document.getElementById('3dQtdPecas');
+      const prazo = document.getElementById('3dPrazo');
+      const pedido = document.getElementById('3dPedido');
+      if(material) material.value = '';
+      if(qtd) qtd.value = '1';
+      if(prazo) prazo.value = '';
+      if(pedido) pedido.value = '';
+      applyBudgetOrderInfo(false);
+      const res = document.getElementById('3dRes');
+      const quote = document.getElementById('3dQuote');
+      if(res) res.style.display = 'none';
+      if(quote) quote.style.display = 'none';
+      last3DQuote = '';
+      last3DBudget = null;
+      resetBudgetEditState();
+      refreshTabNavigation();
+    }
+
+    function renderBudgetHistory(q=''){
+      const wrap = document.getElementById('budgetHistoryList');
+      if(!wrap) return;
+
+      const query = String(q || '').toLowerCase();
+      const userId = currentUser?.id || '';
+      const list = getBudgetHistory()
+        .filter(b => !userId || !b.user_id || String(b.user_id) === String(userId))
+        .filter(b => {
+          const hay = [b.client_name, b.client_phone, b.product, b.tipo_material, b.prazo_estimado, b.message, b.order_id].join(' ').toLowerCase();
+          return !query || hay.includes(query);
+        })
+        .sort((a,b) => new Date(b.updated_at || b.created_at || 0) - new Date(a.updated_at || a.created_at || 0));
+
+      if(!list.length){
+        wrap.innerHTML = `<div class="empty"><div class="ico">📚</div><p>${query ? 'Nenhum orçamento encontrado' : 'Nenhum orçamento salvo ainda'}</p></div>`;
+        refreshTabNavigation();
+        return;
+      }
+
+      wrap.innerHTML = `
+        <div style="overflow-x:auto">
+          <table>
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Cliente</th>
+                <th>Produto</th>
+                <th>Material</th>
+                <th>Qtd</th>
+                <th>Unitário</th>
+                <th>Total</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${list.map(b => `
+                <tr>
+                  <td style="font-size:12px;color:var(--text-muted)">${esc(budgetDateLabel(b.updated_at || b.created_at))}</td>
+                  <td><strong>${esc(b.client_name || '-')}</strong><br><span style="font-size:11px;color:var(--text-muted)">${esc(b.client_phone || '')}</span></td>
+                  <td>${esc(b.product || '-')}</td>
+                  <td>${esc(b.tipo_material || '-')}</td>
+                  <td>${esc(b.quantidade || 1)}</td>
+                  <td style="font-weight:800;color:var(--success)">R$ ${fmt(b.valor_unitario)}</td>
+                  <td style="font-weight:800;color:var(--primary-light)">R$ ${fmt(b.valor_total)}</td>
+                  <td style="display:flex;gap:6px;flex-wrap:wrap">
+                    <button class="btn btn-sm btn-info" onclick="editBudget('${idAttr(b.id)}')">✏️ Editar</button>
+                    <button class="btn btn-sm btn-success" onclick="sendBudgetFromHistory('${idAttr(b.id)}')">💬 WhatsApp</button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteBudget('${idAttr(b.id)}')">🗑️</button>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+      refreshTabNavigation();
+    }
+
+    function editBudget(id){
+      const budget = getBudgetHistory().find(b => String(b.id) === String(id));
+      if(!budget){ toast('Orçamento não encontrado.', 'error'); return; }
+
+      editingBudgetId = budget.id;
+      const set = (id, value) => { const el = document.getElementById(id); if(el) el.value = value ?? ''; };
+      set('3dPedido', budget.order_id || '');
+      applyBudgetOrderInfo(false);
+      set('3dTipoMaterial', budget.tipo_material || '');
+      set('3dHoras', budget.horas || 0);
+      set('3dMin', budget.minutos || 0);
+      set('3dMat', budget.peso_material || 0);
+      set('3dPrecoKg', budget.preco_kg || 0);
+      set('3dEnergia', budget.energia_hora || 0);
+      set('3dDesgaste', budget.desgaste_hora || 0);
+      set('3dPos', budget.pos_processamento || 0);
+      set('3dEmb', budget.embalagem_envio || 0);
+      set('3dImp', budget.impostos_percentual || 0);
+      set('3dLucro', budget.lucro_percentual || 0);
+      set('3dQtdPecas', budget.quantidade || 1);
+      set('3dPrazo', budget.prazo_estimado || '');
+
+      const badge = document.getElementById('budgetEditingBadge');
+      if(badge) badge.classList.add('show');
+      const saveBtn = document.getElementById('budgetSaveBtn');
+      if(saveBtn) saveBtn.textContent = '💾 Atualizar orçamento';
+
+      calc3D();
+      document.getElementById('s-custos')?.scrollIntoView({ behavior:'smooth', block:'start' });
+      toast('Orçamento carregado para edição.', 'info');
+    }
+
+    function deleteBudget(id){
+      if(!confirm('Excluir este orçamento do histórico?')) return;
+      const list = getBudgetHistory().filter(b => String(b.id) !== String(id));
+      setBudgetHistory(list);
+      if(String(editingBudgetId) === String(id)) resetBudgetEditState();
+      renderBudgetHistory(document.getElementById('budgetHistorySearch')?.value?.toLowerCase() || '');
+      toast('Orçamento excluído.', 'info');
+    }
+
+    function sendBudgetFromHistory(id){
+      const budget = getBudgetHistory().find(b => String(b.id) === String(id));
+      if(!budget){ toast('Orçamento não encontrado.', 'error'); return; }
+      const normalized = normalizePhoneForWhatsApp(budget.client_phone || '');
+      const cleanMsg = cleanWhatsAppMessage(budget.message || '');
+      const url = normalized ? `https://wa.me/${normalized}?text=${encodeURIComponent(cleanMsg)}` : `https://wa.me/?text=${encodeURIComponent(cleanMsg)}`;
+      window.open(url, '_blank');
+    }
+
+    async function syncLinkedOrderFromBudget(budget){
+      if(!budget?.order_id || !currentUser) return true;
+      const order = D.ord.find(o => String(o.id) === String(budget.order_id));
+      if(!order) return true;
+
+      const payload = {
+        quantidade: Number(budget.quantidade || 1),
+        valor_unitario: Number(budget.valor_unitario || 0)
+      };
+
+      const { error } = await SB.from('pedidos').update(payload).eq('id', budget.order_id);
+      if(error){
+        console.error(error);
+        toast('Orçamento salvo, mas não consegui atualizar o pedido vinculado.', 'error');
+        return false;
+      }
+      return true;
     }
 
     function calcOrderTotal(){
@@ -1265,20 +1764,15 @@
       return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
     }
 
-    function deliveryWhatsApp(id){
+    function deliveryWhatsApp(id, person){
       const o = D.ord.find(x => String(x.id) === String(id));
       if(!o) return;
 
-      const { raw, normalized } = getDeliveryPhone();
-      const deliveryInput = document.getElementById('deliveryPhone');
-
+      const normalized = person?.normalized || normalizePhoneForWhatsApp(person?.telefone || '');
       if(!normalized){
-        toast('Informe e salve o celular do entregador antes de enviar.', 'error');
-        deliveryInput?.focus();
+        toast('Selecione ou cadastre um entregador válido.', 'error');
         return;
       }
-
-      if(raw) localStorage.setItem(DELIVERY_PHONE_KEY, raw);
 
       const c = getClient(o.cliId);
       if(!c){
@@ -1295,37 +1789,38 @@
         return;
       }
 
-      const msg = `🚚 *ENTREGA - GestãoPro Studio Giga*
+      const msg = `*ENTREGA - GestãoPro Studio Giga*
 
 ` +
-        `👤 *Cliente:* ${c.nom || '-'}
+        `*Cliente:* ${c.nom || '-'}
 ` +
-        `📞 *Telefone:* ${c.tel || '-'}
+        `*Telefone:* ${c.tel || '-'}
 
 ` +
-        `📦 *Pedido:* #${String(o.id).slice(0,8)}
+        `*Pedido:* #${String(o.id).slice(0,8)}
 ` +
-        `🛍️ *Produto:* ${o.prod || '-'}
+        `*Produto:* ${o.prod || '-'}
 ` +
-        `🔢 *Quantidade:* ${o.qtd || 1}
+        `*Quantidade:* ${o.qtd || 1}
 ` +
-        `💰 *Valor unitário:* R$ ${fmt(o.val)}
+        `*Valor unitário:* R$ ${fmt(o.val)}
 ` +
-        `💵 *Total:* R$ ${fmt(total)}
+        `*Total:* R$ ${fmt(total)}
 ` +
-        `📌 *Status:* ${STATUS[o.status]?.l || o.status}
+        `*Status:* ${STATUS[o.status]?.l || o.status}
 ` +
-        `📝 *Obs do pedido:* ${o.obs || '-'}
+        `*Obs do pedido:* ${o.obs || '-'}
 
 ` +
-        `📍 *Endereço:* ${address}
+        `*Endereço:* ${address}
 ` +
-        `🗺️ *Abrir no Google Maps:* ${maps}
+        `*Abrir no Google Maps:* ${maps}
 
 ` +
-        `✅ Favor confirmar quando a entrega for finalizada.`;
+        `Favor confirmar quando a entrega for finalizada.`;
 
-      window.open(`https://wa.me/${normalized}?text=${encodeURIComponent(msg)}`, '_blank');
+      const cleanMsg = cleanWhatsAppMessage(msg);
+      window.open(`https://wa.me/${normalized}?text=${encodeURIComponent(cleanMsg)}`, '_blank');
     }
 
     function resetOrderForm(){
@@ -1488,7 +1983,8 @@
           <td>${esc(o.obs || '-')}</td>
           <td style="display:flex;gap:6px;flex-wrap:wrap">
             <button class="btn btn-sm btn-info" onclick="editOrder('${idAttr(o.id)}')">✏️ Editar</button>
-            <button class="btn btn-sm btn-success" onclick="deliveryWhatsApp('${idAttr(o.id)}')">🚚 Entrega</button>
+            <button class="btn btn-sm btn-outline" onclick="openBudgetForOrder('${idAttr(o.id)}')">🧾 Orçar</button>
+            <button class="btn btn-sm btn-success" onclick="openDeliveryModal('${idAttr(o.id)}')">🚚 Entrega</button>
             <button class="btn btn-sm btn-danger" onclick="delOrder('${idAttr(o.id)}')">🗑️</button>
           </td>
         </tr>
@@ -1619,6 +2115,7 @@
       const tipoMaterial = document.getElementById('3dTipoMaterial').value.trim() || 'Material a definir';
       const qtdPecas = Math.max(1, Number(document.getElementById('3dQtdPecas').value || 1));
       const prazo = document.getElementById('3dPrazo').value.trim() || 'A combinar';
+      const { order: budgetOrder, client: budgetClient } = getBudgetOrderContext();
 
       const cM = mat * pKg / 1000;
       const cE = tH * en;
@@ -1629,13 +2126,66 @@
       const unit = base + vImp + vLuc;
       const totalServico = unit * qtdPecas;
 
+      const pedidoInfo = budgetOrder ?
+        `*Pedido vinculado:* #${String(budgetOrder.id).slice(0,8)}
+` +
+        `*Cliente:* ${budgetClient?.nom || '-'}
+` +
+        `*Telefone:* ${budgetClient?.tel || '-'}
+` +
+        `*Produto/Descrição:* ${budgetOrder.prod || '-'}
+` +
+        `*Obs do pedido:* ${budgetOrder.obs || '-'}
+
+` : '';
+
+      last3DQuote = cleanWhatsAppMessage(`*ORÇAMENTO - 3DGIGA*
+
+` +
+        pedidoInfo +
+        `*Material:* ${tipoMaterial}
+` +
+        `*Tempo de impressão:* ${h}h ${String(m).padStart(2,'0')}min
+` +
+        `*Prazo estimado de entrega:* ${prazo}
+
+` +
+        `*Quantidade de peças:* ${qtdPecas}
+` +
+        `*Valor unitário:* R$ ${fmt(unit)}
+` +
+        `*Valor total do serviço:* R$ ${fmt(totalServico)}`);
+
       last3DBudget = {
-        user_id: currentUser?.id,
+        id: editingBudgetId || null,
+        user_id: currentUser?.id || '',
+        order_id: budgetOrder?.id || '',
+        client_id: budgetOrder?.cliId || '',
+        client_name: budgetClient?.nom || '',
+        client_phone: budgetClient?.tel || '',
+        product: budgetOrder?.prod || '',
+        order_obs: budgetOrder?.obs || '',
         tipo_material: tipoMaterial,
+        horas: h,
+        minutos: m,
         horas_impressao: Number(tH.toFixed(2)),
+        peso_material: mat,
+        preco_kg: pKg,
+        energia_hora: en,
+        desgaste_hora: dsg,
+        pos_processamento: pos,
+        embalagem_envio: emb,
+        impostos_percentual: imp,
+        lucro_percentual: lucro,
         prazo_estimado: prazo,
         quantidade: qtdPecas,
-        valor_unitario: Number(unit.toFixed(2))
+        valor_unitario: Number(unit.toFixed(2)),
+        valor_total: Number(totalServico.toFixed(2)),
+        custo_base: Number(base.toFixed(2)),
+        valor_impostos: Number(vImp.toFixed(2)),
+        valor_lucro: Number(vLuc.toFixed(2)),
+        message: last3DQuote,
+        updated_at: new Date().toISOString()
       };
 
       const res = document.getElementById('3dRes');
@@ -1650,28 +2200,24 @@
         </div>
         <div class="res-val">VALOR UNITÁRIO: R$ ${fmt(unit)}</div>
         <div class="res-det">Quantidade: ${qtdPecas} peça(s) • Total do serviço: R$ ${fmt(totalServico)} • Tempo: ${h}h ${m}min • Custo base: R$ ${fmt(base)} • Lucro: R$ ${fmt(vLuc)}</div>
+        ${budgetOrder ? `<div class="budget-sync-note">Pedido vinculado: ao salvar este orçamento, o pedido #${esc(String(budgetOrder.id).slice(0,8))} será atualizado para ${qtdPecas} peça(s) e valor unitário de R$ ${fmt(unit)}.</div>` : ''}
       `;
-
-      last3DQuote = `🧾 *ORÇAMENTO - 3DGIGA*\n\n` +
-        `🎨 *Material:* ${tipoMaterial}\n` +
-        `⏱️ *Tempo de impressão:* ${h}h ${String(m).padStart(2,'0')}min\n` +
-        `📦 *Prazo estimado de entrega:* ${prazo}\n\n` +
-        `🔢 *Quantidade de peças:* ${qtdPecas}\n` +
-        `💰 *Valor unitário:* R$ ${fmt(unit)}\n` +
-        `💵 *Valor total do serviço:* R$ ${fmt(totalServico)}`;
 
       const quote = document.getElementById('3dQuote');
       quote.style.display = 'block';
       quote.innerHTML = `
         <h3 style="font-size:15px;margin-bottom:6px">🧾 Orçamento para Cliente</h3>
         <p style="font-size:12px;color:var(--text-muted)">Versão limpa, sem detalhar seus custos internos.</p>
-        <div class="quote-preview">${esc(last3DQuote).replace(/\n/g, '<br>')}</div>
+        <div class="quote-preview">${esc(last3DQuote).replace(/
+/g, '<br>')}</div>
         <div class="quote-actions">
           <button class="btn btn-sm btn-success" onclick="copy3DQuote()">📋 Copiar orçamento</button>
           <button class="btn btn-sm btn-info" onclick="send3DQuoteWhatsApp()">💬 Enviar pelo WhatsApp</button>
-          <button class="btn btn-sm btn-outline" onclick="save3DQuote()">💾 Salvar online</button>
+          <button class="btn btn-sm btn-outline" id="budgetSaveBtn" onclick="save3DQuote()">${editingBudgetId ? '💾 Atualizar orçamento' : '💾 Salvar orçamento'}</button>
+          <button class="btn btn-sm btn-outline" onclick="clearBudgetForm()">🧹 Limpar</button>
         </div>
       `;
+      refreshTabNavigation();
     }
 
     function copy3DQuote(){
@@ -1681,19 +2227,56 @@
 
     function send3DQuoteWhatsApp(){
       if(!last3DQuote){ toast('Calcule o orçamento primeiro.', 'error'); return; }
-      window.open(`https://wa.me/?text=${encodeURIComponent(last3DQuote)}`, '_blank');
+      const { client } = getBudgetOrderContext();
+      const normalized = normalizePhoneForWhatsApp(client?.tel || '');
+      const cleanMsg = cleanWhatsAppMessage(last3DQuote);
+      const url = normalized
+        ? `https://wa.me/${normalized}?text=${encodeURIComponent(cleanMsg)}`
+        : `https://wa.me/?text=${encodeURIComponent(cleanMsg)}`;
+      window.open(url, '_blank');
     }
 
     async function save3DQuote(){
       if(!currentUser){ toast('Faça login primeiro.', 'error'); return; }
-      if(!last3DBudget){ toast('Calcule o orçamento primeiro.', 'error'); return; }
-      const { error } = await SB.from('orcamentos_3d').insert(last3DBudget);
-      if(error){
-        console.error(error);
-        toast('Erro ao salvar orçamento. Confira se a tabela orcamentos_3d existe.', 'error');
-        return;
+      if(!last3DBudget){
+        calc3D();
+        if(!last3DBudget){ toast('Calcule o orçamento primeiro.', 'error'); return; }
       }
-      toast('Orçamento salvo online!');
+
+      const history = getBudgetHistory();
+      const now = new Date().toISOString();
+      let budget = { ...last3DBudget, updated_at: now };
+
+      if(editingBudgetId){
+        const idx = history.findIndex(b => String(b.id) === String(editingBudgetId));
+        if(idx >= 0){
+          budget = { ...history[idx], ...budget, id: editingBudgetId, created_at: history[idx].created_at || now, updated_at: now };
+          history[idx] = budget;
+        }else{
+          budget.id = editingBudgetId;
+          budget.created_at = now;
+          history.unshift(budget);
+        }
+      }else{
+        budget.id = 'orc_' + Date.now();
+        budget.created_at = now;
+        history.unshift(budget);
+      }
+
+      setBudgetHistory(history);
+      last3DBudget = budget;
+      last3DQuote = budget.message || last3DQuote;
+
+      const synced = await syncLinkedOrderFromBudget(budget);
+      await refreshData();
+      renderBudgetHistory(document.getElementById('budgetHistorySearch')?.value?.toLowerCase() || '');
+      resetBudgetEditState();
+
+      if(budget.order_id && synced){
+        toast('Orçamento salvo e pedido vinculado atualizado!');
+      }else{
+        toast('Orçamento salvo no histórico!');
+      }
     }
 
     function setShVendedor(t){
@@ -1784,6 +2367,7 @@
       renderOrders(document.querySelector('#s-pedidos .search-box')?.value?.toLowerCase() || '');
       fillSelects();
       renderFinanceChart();
+      setTimeout(refreshTabNavigation, 0);
     }
 
     function createBg(){
@@ -1812,8 +2396,8 @@
       applyChartFilter();
       calcOrderTotal();
       calcShopee();
-      loadDeliveryPhone();
       await checkSession();
+      refreshTabNavigation();
     };
   </script>
 </body>
