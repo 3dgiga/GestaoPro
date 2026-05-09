@@ -391,6 +391,88 @@
     }
     .calc-res .res-val{font-size:28px;font-weight:800;color:var(--success)}
     .calc-res .res-det{font-size:11px;color:var(--text-muted);margin-top:6px;line-height:1.6}
+
+    .pricing-result{
+      background:linear-gradient(135deg,rgba(15,23,42,.98),rgba(30,41,59,.96));
+      border:1px solid rgba(129,140,248,.30);
+      border-radius:16px;
+      padding:18px;
+      margin-top:16px;
+      box-shadow:0 18px 45px rgba(0,0,0,.24);
+    }
+    .pricing-result h4{
+      font-size:13px;
+      color:var(--text);
+      text-transform:none;
+      letter-spacing:0;
+      margin-bottom:12px;
+      display:flex;
+      align-items:center;
+      gap:6px;
+    }
+    .pricing-summary-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(170px,1fr));
+      gap:10px;
+      margin-bottom:14px;
+    }
+    .pricing-total-card{
+      background:rgba(34,197,94,.10);
+      border:1px solid rgba(34,197,94,.32);
+      border-radius:14px;
+      padding:14px;
+    }
+    .pricing-total-card .lbl,
+    .pricing-mini-card .lbl,
+    .pricing-line span:first-child{
+      font-size:11px;
+      color:var(--text-muted);
+      text-transform:uppercase;
+      letter-spacing:.45px;
+      font-weight:700;
+    }
+    .pricing-total-card .val{
+      font-size:26px;
+      font-weight:800;
+      color:var(--success);
+      margin-top:4px;
+    }
+    .pricing-mini-card{
+      background:rgba(11,17,32,.75);
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:14px;
+    }
+    .pricing-mini-card .val{
+      font-size:18px;
+      font-weight:800;
+      color:var(--text);
+      margin-top:4px;
+    }
+    .pricing-lines{
+      background:rgba(11,17,32,.72);
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:12px 14px;
+    }
+    .pricing-line{
+      display:flex;
+      justify-content:space-between;
+      gap:14px;
+      padding:9px 0;
+      border-bottom:1px dashed rgba(148,163,184,.24);
+      font-size:13px;
+    }
+    .pricing-line:last-child{border-bottom:none}
+    .pricing-line strong{font-size:13px;color:var(--text);font-weight:800;text-align:right}
+    .pricing-line.highlight strong{color:var(--success)}
+    .pricing-line.profit strong{color:var(--orange)}
+    .pricing-note{
+      margin-top:12px;
+      font-size:12px;
+      color:var(--text-muted);
+      line-height:1.5;
+    }
     .calc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
     .calc-group{
       margin-bottom:14px;padding:12px;background:var(--bg);border-radius:10px;border:1px solid var(--border);
@@ -758,7 +840,7 @@
             <div class="form-row">
               <div class="form-group">
                 <label>Valor Unitário (R$)</label>
-                <input type="number" id="oVal" step="0.01" min="0" required oninput="calcOrderTotal()">
+                <input type="number" id="oVal" step="0.01" min="0" placeholder="Opcional" oninput="calcOrderTotal()">
               </div>
               <div class="form-group">
                 <label>Total do Pedido</label>
@@ -821,7 +903,19 @@
             <div class="calc-group">
               <h4>🎨 Material</h4>
               <div class="form-row">
-                <div class="form-group"><label>Tipo de Material</label><input type="text" id="3dTipoMaterial" placeholder="PLA, PETG, ABS, Resina..."></div>
+                <div class="form-group"><label>Tipo de Material</label><select id="3dTipoMaterial">
+                    <option value="">Selecione...</option>
+                    <option value="PLA">PLA</option>
+                    <option value="PLA+">PLA+</option>
+                    <option value="PETG">PETG</option>
+                    <option value="ABS">ABS</option>
+                    <option value="ASA">ASA</option>
+                    <option value="TPU">TPU</option>
+                    <option value="Resina">Resina</option>
+                    <option value="Nylon">Nylon</option>
+                    <option value="PC">PC</option>
+                    <option value="Outro / Especial">Outro / Especial</option>
+                  </select></div>
                 <div class="form-group"><label>Peso (g)</label><input type="number" id="3dMat" min="0" step="0.01"></div>
                 <div class="form-group"><label>Preço/kg (R$)</label><input type="number" id="3dPrecoKg" min="0" step="0.01"></div>
               </div>
@@ -839,7 +933,8 @@
               <h4>📦 Pós-processamento & Logística</h4>
               <div class="form-row">
                 <div class="form-group"><label>Pós-processamento (R$)</label><input type="number" id="3dPos" min="0" step="0.01"></div>
-                <div class="form-group"><label>Embalagem/Envio (R$)</label><input type="number" id="3dEmb" min="0" step="0.01"></div>
+                <div class="form-group"><label>Embalagem (R$)</label><input type="number" id="3dEmb" min="0" step="0.01"></div>
+                <div class="form-group"><label>Frete (R$)</label><input type="number" id="3dFrete" min="0" step="0.01"></div>
               </div>
             </div>
 
@@ -862,10 +957,10 @@
               </div>
               <div class="form-row">
                 <div class="form-group"><label>Quantidade de Peças</label><input type="number" id="3dQtdPecas" min="1" value="1"></div>
-                <div class="form-group"><label>Valor unitário final sincronizado (R$)</label><input type="number" id="3dValorFinal" min="0" step="0.01" placeholder="Deixe 0 para usar o cálculo automático"></div>
+                <div class="form-group"><label>Valor unitário manual (opcional)</label><input type="number" id="3dValorFinal" min="0" step="0.01" placeholder="Deixe vazio para calcular"></div>
                 <div class="form-group"><label>Prazo estimado para entrega</label><input type="text" id="3dPrazo" placeholder="Ex: 3 dias úteis"></div>
               </div>
-              <p style="font-size:11px;color:var(--text-muted);line-height:1.5;margin-top:-4px">Se preencher o valor unitário final, ele será usado para atualizar o pedido. Se deixar vazio ou 0, a calculadora usa o cálculo automático.</p>
+              <p style="font-size:11px;color:var(--text-muted);line-height:1.5;margin-top:-4px">Esse campo é opcional. Se ficar vazio, a calculadora usa os custos informados. Se preencher manualmente, o valor manual será usado para salvar o orçamento e atualizar o pedido vinculado.</p>
             </div>
 
             <button class="calc-btn" onclick="calc3D()">🧮 Calcular Preço Final</button>
@@ -991,6 +1086,8 @@
     let editingClientId = null;
     let editingOrderId = null;
     const DELIVERY_SELECTED_KEY = 'gestaopro_delivery_selected';
+    const CALC_3D_LAST_KEY = 'gestaopro_3d_last_inputs_v2';
+    const CALC_3D_META_KEY = 'gestaopro_3d_budget_meta_v2';
     let currentDeliveryOrderId = null;
 
     function fmt(v){
@@ -1307,8 +1404,50 @@
       };
     }
 
+    function readLocalJson(key, fallback){
+      try{
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+      }catch(_){
+        return fallback;
+      }
+    }
+
+    function writeLocalJson(key, value){
+      try{ localStorage.setItem(key, JSON.stringify(value)); }catch(_){ }
+    }
+
+    function getBudgetMetaMap(){
+      return readLocalJson(CALC_3D_META_KEY, {});
+    }
+
+    function getBudgetMeta(id){
+      if(!id) return {};
+      return getBudgetMetaMap()[String(id)] || {};
+    }
+
+    function saveBudgetMeta(id, meta){
+      if(!id || !meta) return;
+      const map = getBudgetMetaMap();
+      map[String(id)] = { ...meta, id: String(id), updated_at: new Date().toISOString() };
+      writeLocalJson(CALC_3D_META_KEY, map);
+    }
+
+    function deleteBudgetMeta(id){
+      if(!id) return;
+      const map = getBudgetMetaMap();
+      delete map[String(id)];
+      writeLocalJson(CALC_3D_META_KEY, map);
+    }
+
+    function numberFromRow(row, key, meta, fallback=0){
+      const value = row?.[key] ?? meta?.[key] ?? fallback;
+      return Number(value || 0);
+    }
+
     function mapBudget(row){
-      const horasDecimais = Number(row.horas_impressao || 0);
+      const meta = getBudgetMeta(row.id);
+      const horasDecimais = Number(row.horas_impressao || meta.horas_impressao || 0);
       const horas = Math.floor(horasDecimais);
       const minutos = Math.round((horasDecimais - horas) * 60);
       return {
@@ -1317,7 +1456,7 @@
         order_id: row.pedido_id || '',
         client_id: row.cliente_id || '',
         product: row.produto || '',
-        tipo_material: row.tipo_material || '',
+        tipo_material: row.tipo_material || meta.tipo_material || '',
         horas_impressao: horasDecimais,
         horas,
         minutos,
@@ -1327,7 +1466,21 @@
         prazo_estimado: row.prazo_estimado || '',
         message: row.mensagem || '',
         created_at: row.criado_em || row.created_at || '',
-        updated_at: row.atualizado_em || row.criado_em || row.updated_at || ''
+        updated_at: row.atualizado_em || row.criado_em || row.updated_at || '',
+        peso_material: numberFromRow(row, 'peso_material', meta),
+        preco_kg: numberFromRow(row, 'preco_kg', meta),
+        energia_hora: numberFromRow(row, 'energia_hora', meta),
+        desgaste_hora: numberFromRow(row, 'desgaste_hora', meta),
+        pos_processamento: numberFromRow(row, 'pos_processamento', meta),
+        embalagem_envio: numberFromRow(row, 'embalagem_envio', meta),
+        frete: numberFromRow(row, 'frete', meta),
+        impostos_percentual: numberFromRow(row, 'impostos_percentual', meta),
+        lucro_percentual: numberFromRow(row, 'lucro_percentual', meta),
+        custo_base: numberFromRow(row, 'custo_base', meta),
+        valor_impostos: numberFromRow(row, 'valor_impostos', meta),
+        valor_lucro: numberFromRow(row, 'valor_lucro', meta),
+        margem_percentual: numberFromRow(row, 'margem_percentual', meta),
+        manual_unit: numberFromRow(row, 'manual_unit', meta)
       };
     }
 
@@ -1685,7 +1838,8 @@
 
       const current = select.value;
       const opts = '<option value="">Selecione um pedido...</option>' + D.ord.map(o => {
-        const label = `#${String(o.id).slice(0,8)} - ${getClientName(o.cliId)} - ${o.prod || 'Pedido'} - R$ ${fmt(orderTotal(o))}`;
+        const totalLabel = orderTotal(o) > 0 ? `R$ ${fmt(orderTotal(o))}` : 'Sem valor';
+        const label = `#${String(o.id).slice(0,8)} - ${getClientName(o.cliId)} - ${o.prod || 'Pedido'} - ${totalLabel}`;
         return `<option value="${esc(o.id)}">${esc(label)}</option>`;
       }).join('');
 
@@ -1721,16 +1875,22 @@
         const qtdEl = document.getElementById('3dQtdPecas');
         const valorFinalEl = document.getElementById('3dValorFinal');
         if(qtdEl) qtdEl.value = Math.max(1, Number(order.qtd || 1));
-        if(valorFinalEl) valorFinalEl.value = Number(order.val || 0).toFixed(2);
+        if(valorFinalEl) valorFinalEl.value = '';
+        last3DBudget = null;
+        last3DQuote = '';
       }
+
+      const totalAtual = orderTotal(order);
+      const valorInfo = Number(order.val || 0) > 0 ? `R$ ${fmt(order.val)} unitário • R$ ${fmt(totalAtual)} total` : 'Valor ainda não definido no pedido';
 
       if(resumo){
         resumo.style.display = 'block';
         resumo.innerHTML = `
           <strong>Cliente:</strong> ${esc(client?.nom || 'Não encontrado')}<br>
           <strong>Produto:</strong> ${esc(order.prod || '-')}<br>
-          <strong>Pedido:</strong> #${esc(String(order.id).slice(0,8))} • <strong>Qtd:</strong> ${esc(order.qtd || 1)} • <strong>Total atual:</strong> R$ ${fmt(orderTotal(order))}
+          <strong>Pedido:</strong> #${esc(String(order.id).slice(0,8))} • <strong>Qtd:</strong> ${esc(order.qtd || 1)} • <strong>Valor atual:</strong> ${esc(valorInfo)}
           ${order.obs ? `<br><strong>Obs:</strong> ${esc(order.obs)}` : ''}
+          <br><span style="color:var(--primary-light);font-weight:700">A calculadora não usa esse valor como custo. Ao salvar o orçamento, ela atualiza o pedido com o novo preço calculado.</span>
         `;
       }
 
@@ -1784,8 +1944,55 @@
       if(saveBtn) saveBtn.textContent = '💾 Salvar orçamento';
     }
 
+    function get3DLastInputIds(){
+      return ['3dHoras','3dMin','3dTipoMaterial','3dMat','3dPrecoKg','3dEnergia','3dDesgaste','3dPos','3dEmb','3dFrete','3dImp','3dLucro','3dQtdPecas','3dPrazo'];
+    }
+
+    function get3DInputsSnapshot(){
+      const data = {};
+      get3DLastInputIds().forEach(id => {
+        const el = document.getElementById(id);
+        if(el) data[id] = el.value;
+      });
+      return data;
+    }
+
+    function saveLast3DInputs(){
+      writeLocalJson(CALC_3D_LAST_KEY, get3DInputsSnapshot());
+    }
+
+    function restoreLast3DInputs(){
+      const data = readLocalJson(CALC_3D_LAST_KEY, null);
+      if(!data) return;
+      Object.keys(data).forEach(id => {
+        const el = document.getElementById(id);
+        if(el && id !== '3dValorFinal' && id !== '3dPedido') el.value = data[id];
+      });
+    }
+
+    function buildBudgetMeta(budget){
+      return {
+        tipo_material: budget.tipo_material || '',
+        horas_impressao: Number(budget.horas_impressao || 0),
+        peso_material: Number(budget.peso_material || 0),
+        preco_kg: Number(budget.preco_kg || 0),
+        energia_hora: Number(budget.energia_hora || 0),
+        desgaste_hora: Number(budget.desgaste_hora || 0),
+        pos_processamento: Number(budget.pos_processamento || 0),
+        embalagem_envio: Number(budget.embalagem_envio || 0),
+        frete: Number(budget.frete || 0),
+        impostos_percentual: Number(budget.impostos_percentual || 0),
+        lucro_percentual: Number(budget.lucro_percentual || 0),
+        custo_base: Number(budget.custo_base || 0),
+        valor_impostos: Number(budget.valor_impostos || 0),
+        valor_lucro: Number(budget.valor_lucro || 0),
+        margem_percentual: Number(budget.margem_percentual || 0),
+        manual_unit: Number(budget.manual_unit || 0)
+      };
+    }
+
     function clearBudgetForm(){
-      ['3dHoras','3dMin','3dMat','3dPrecoKg','3dEnergia','3dDesgaste','3dPos','3dEmb','3dImp','3dLucro'].forEach(id => {
+      ['3dHoras','3dMin','3dMat','3dPrecoKg','3dEnergia','3dDesgaste','3dPos','3dEmb','3dFrete','3dImp','3dLucro'].forEach(id => {
         const el = document.getElementById(id);
         if(el) el.value = '0';
       });
@@ -1806,6 +2013,7 @@
       if(quote) quote.style.display = 'none';
       last3DQuote = '';
       last3DBudget = null;
+      writeLocalJson(CALC_3D_LAST_KEY, get3DInputsSnapshot());
       resetBudgetEditState();
       refreshTabNavigation();
     }
@@ -1881,16 +2089,17 @@
       set('3dTipoMaterial', budget.tipo_material || '');
       set('3dHoras', budget.horas || 0);
       set('3dMin', budget.minutos || 0);
-      set('3dMat', 0);
-      set('3dPrecoKg', 0);
-      set('3dEnergia', 0);
-      set('3dDesgaste', 0);
-      set('3dPos', 0);
-      set('3dEmb', 0);
-      set('3dImp', 0);
-      set('3dLucro', 0);
+      set('3dMat', budget.peso_material || 0);
+      set('3dPrecoKg', budget.preco_kg || 0);
+      set('3dEnergia', budget.energia_hora || 0);
+      set('3dDesgaste', budget.desgaste_hora || 0);
+      set('3dPos', budget.pos_processamento || 0);
+      set('3dEmb', budget.embalagem_envio || 0);
+      set('3dFrete', budget.frete || 0);
+      set('3dImp', budget.impostos_percentual || 0);
+      set('3dLucro', budget.lucro_percentual || 0);
       set('3dQtdPecas', budget.quantidade || 1);
-      set('3dValorFinal', Number(budget.valor_unitario || 0).toFixed(2));
+      set('3dValorFinal', Number(budget.manual_unit || 0) > 0 ? Number(budget.manual_unit || 0).toFixed(2) : '');
       set('3dPrazo', budget.prazo_estimado || '');
 
       const badge = document.getElementById('budgetEditingBadge');
@@ -1911,6 +2120,7 @@
         toast('Erro ao excluir orçamento no Supabase.', 'error');
         return;
       }
+      deleteBudgetMeta(id);
       if(String(editingBudgetId) === String(id)) resetBudgetEditState();
       await refreshData();
       renderBudgetHistory(document.getElementById('budgetHistorySearch')?.value?.toLowerCase() || '');
@@ -2079,7 +2289,7 @@
       document.getElementById('oCli').value = o.cliId || '';
       document.getElementById('oProd').value = o.prod || '';
       document.getElementById('oQtd').value = o.qtd || 1;
-      document.getElementById('oVal').value = Number(o.val || 0).toFixed(2);
+      document.getElementById('oVal').value = Number(o.val || 0) > 0 ? Number(o.val || 0).toFixed(2) : '';
       document.getElementById('oObs').value = o.obs || '';
       calcOrderTotal();
 
@@ -2304,8 +2514,8 @@
           <td><strong>${esc(getClientName(o.cliId))}</strong></td>
           <td>${esc(o.prod)}</td>
           <td>${esc(o.qtd)}</td>
-          <td style="color:var(--text-muted);font-weight:600">R$ ${fmt(o.val)}</td>
-          <td style="color:var(--success);font-weight:800">R$ ${fmt(o.total ?? (Number(o.val || 0) * Number(o.qtd || 1)))}</td>
+          <td style="color:var(--text-muted);font-weight:600">${Number(o.val || 0) > 0 ? `R$ ${fmt(o.val)}` : 'A definir'}</td>
+          <td style="color:var(--success);font-weight:800">${orderTotal(o) > 0 ? `R$ ${fmt(orderTotal(o))}` : 'A definir'}</td>
           <td>
             <select onchange="updateOrderStatus('${idAttr(o.id)}', this.value)" class="mini-select status-select ${esc(o.status)}">
               ${Object.keys(STATUS).map(k => `<option value="${k}" ${o.status === k ? 'selected' : ''}>${STATUS[k].l}</option>`).join('')}
@@ -2447,9 +2657,10 @@
       const dsg = Number(document.getElementById('3dDesgaste').value || 0);
       const pos = Number(document.getElementById('3dPos').value || 0);
       const emb = Number(document.getElementById('3dEmb').value || 0);
+      const frete = Number(document.getElementById('3dFrete')?.value || 0);
       const imp = Number(document.getElementById('3dImp').value || 0);
       const lucro = Number(document.getElementById('3dLucro').value || 0);
-      const tipoMaterial = document.getElementById('3dTipoMaterial').value.trim() || 'Material a definir';
+      const tipoMaterial = document.getElementById('3dTipoMaterial').value || 'Material a definir';
       const qtdPecas = Math.max(1, Number(document.getElementById('3dQtdPecas').value || 1));
       const prazo = document.getElementById('3dPrazo').value.trim() || 'A combinar';
       const { order: budgetOrder, client: budgetClient } = getBudgetOrderContext();
@@ -2457,17 +2668,18 @@
       const cM = mat * pKg / 1000;
       const cE = tH * en;
       const cD = tH * dsg;
-      const base = cM + cE + cD + pos + emb;
+      const base = cM + cE + cD + pos + emb + frete;
       const vImp = base * imp / 100;
       const vLuc = (base + vImp) * lucro / 100;
       const calculatedUnit = base + vImp + vLuc;
       const valorFinalEl = document.getElementById('3dValorFinal');
       const manualUnit = Number(valorFinalEl?.value || 0);
-      const unit = manualUnit > 0 ? manualUnit : calculatedUnit;
-      if(valorFinalEl && (!valorFinalEl.value || Number(valorFinalEl.value) <= 0)){
-        valorFinalEl.value = unit.toFixed(2);
-      }
+      const usingManualUnit = manualUnit > 0;
+      const unit = usingManualUnit ? manualUnit : calculatedUnit;
       const totalServico = unit * qtdPecas;
+      const margemPercentual = unit > 0 ? (vLuc / unit) * 100 : 0;
+
+      saveLast3DInputs();
 
       const pedidoInfo = budgetOrder ?
         `*Pedido vinculado:* #${String(budgetOrder.id).slice(0,8)}
@@ -2518,6 +2730,7 @@
         desgaste_hora: dsg,
         pos_processamento: pos,
         embalagem_envio: emb,
+        frete,
         impostos_percentual: imp,
         lucro_percentual: lucro,
         prazo_estimado: prazo,
@@ -2527,6 +2740,8 @@
         custo_base: Number(base.toFixed(2)),
         valor_impostos: Number(vImp.toFixed(2)),
         valor_lucro: Number(vLuc.toFixed(2)),
+        margem_percentual: Number(margemPercentual.toFixed(2)),
+        manual_unit: usingManualUnit ? Number(manualUnit.toFixed(2)) : 0,
         message: last3DQuote,
         updated_at: new Date().toISOString()
       };
@@ -2534,16 +2749,41 @@
       const res = document.getElementById('3dRes');
       res.style.display = 'block';
       res.innerHTML = `
-        <h4>📋 Resultado da Precificação</h4>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;font-size:12px;color:var(--text-muted);margin-bottom:12px">
-          <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px">Material<br><strong style="color:#fff">R$ ${fmt(cM)}</strong></div>
-          <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px">Energia<br><strong style="color:#fff">R$ ${fmt(cE)}</strong></div>
-          <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px">Desgaste<br><strong style="color:#fff">R$ ${fmt(cD)}</strong></div>
-          <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px">Impostos<br><strong style="color:var(--orange)">R$ ${fmt(vImp)}</strong></div>
+        <div class="pricing-result">
+          <h4>📋 Resultado da Precificação</h4>
+          <div class="pricing-summary-grid">
+            <div class="pricing-total-card">
+              <div class="lbl">Valor unitário ${usingManualUnit ? 'manual' : 'calculado'}</div>
+              <div class="val">R$ ${fmt(unit)}</div>
+            </div>
+            <div class="pricing-mini-card">
+              <div class="lbl">Total do orçamento</div>
+              <div class="val">R$ ${fmt(totalServico)}</div>
+            </div>
+            <div class="pricing-mini-card">
+              <div class="lbl">Quantidade</div>
+              <div class="val">${qtdPecas} peça(s)</div>
+            </div>
+          </div>
+
+          <div class="pricing-lines">
+            <div class="pricing-line"><span>Material</span><strong>R$ ${fmt(cM)}</strong></div>
+            <div class="pricing-line"><span>Energia</span><strong>R$ ${fmt(cE)}</strong></div>
+            <div class="pricing-line"><span>Desgaste</span><strong>R$ ${fmt(cD)}</strong></div>
+            <div class="pricing-line"><span>Pós-processamento</span><strong>R$ ${fmt(pos)}</strong></div>
+            <div class="pricing-line"><span>Embalagem</span><strong>R$ ${fmt(emb)}</strong></div>
+            <div class="pricing-line"><span>Frete</span><strong>R$ ${fmt(frete)}</strong></div>
+            <div class="pricing-line highlight"><span>Custo base</span><strong>R$ ${fmt(base)}</strong></div>
+            <div class="pricing-line"><span>Impostos (${fmt(imp)}%)</span><strong>R$ ${fmt(vImp)}</strong></div>
+            <div class="pricing-line profit"><span>Lucro (${fmt(lucro)}%)</span><strong>R$ ${fmt(vLuc)}</strong></div>
+            <div class="pricing-line"><span>Margem sobre venda</span><strong>${margemPercentual.toFixed(1)}%</strong></div>
+          </div>
+
+          <div class="pricing-note">
+            Tempo: ${h}h ${String(m).padStart(2,'0')}min • Material: ${esc(tipoMaterial)}${usingManualUnit ? ' • Usando valor manual informado.' : ' • Usando cálculo automático pelos custos.'}
+          </div>
+          ${budgetOrder ? `<div class="budget-sync-note">Pedido vinculado: clique em <strong>Salvar e atualizar pedido</strong> para gravar o orçamento e atualizar o pedido #${esc(String(budgetOrder.id).slice(0,8))} com ${qtdPecas} peça(s), valor unitário R$ ${fmt(unit)} e total R$ ${fmt(totalServico)}.</div>` : ''}
         </div>
-        <div class="res-val">VALOR UNITÁRIO: R$ ${fmt(unit)}</div>
-        <div class="res-det">Quantidade: ${qtdPecas} peça(s) • Total do serviço: R$ ${fmt(totalServico)} • Tempo: ${h}h ${m}min • Custo base: R$ ${fmt(base)} • Lucro: R$ ${fmt(vLuc)}</div>
-        ${budgetOrder ? `<div class="budget-sync-note">Pedido vinculado: ao salvar este orçamento, o pedido #${esc(String(budgetOrder.id).slice(0,8))} será atualizado para ${qtdPecas} peça(s) e valor unitário de R$ ${fmt(unit)}.</div>` : ''}
       `;
 
       const quote = document.getElementById('3dQuote');
@@ -2555,7 +2795,7 @@
         <div class="quote-actions">
           <button class="btn btn-sm btn-success" onclick="copy3DQuote()">📋 Copiar orçamento</button>
           <button class="btn btn-sm btn-info" onclick="send3DQuoteWhatsApp()">💬 Enviar pelo WhatsApp</button>
-          <button class="btn btn-sm btn-outline" id="budgetSaveBtn" onclick="save3DQuote()">${editingBudgetId ? '💾 Atualizar orçamento' : '💾 Salvar orçamento'}</button>
+          <button class="btn btn-sm btn-outline" id="budgetSaveBtn" onclick="save3DQuote()">${editingBudgetId ? '💾 Atualizar orçamento' : budgetOrder ? '💾 Salvar e atualizar pedido' : '💾 Salvar orçamento'}</button>
           <button class="btn btn-sm btn-outline" onclick="clearBudgetForm()">🧹 Limpar</button>
         </div>
       `;
@@ -2586,6 +2826,7 @@
       }
 
       let budget = { ...last3DBudget, updated_at: new Date().toISOString() };
+      const extraMeta = buildBudgetMeta(budget);
       const payload = budgetToDbPayload(budget);
       let res;
 
@@ -2608,6 +2849,7 @@
         return;
       }
 
+      saveBudgetMeta(res.data.id, extraMeta);
       budget = mapBudget(res.data);
       last3DBudget = budget;
       last3DQuote = budget.message || last3DQuote;
@@ -2754,6 +2996,7 @@
       document.getElementById('chartEnd').value = formatDateInput(today);
 
       applyChartFilter();
+      restoreLast3DInputs();
       calcOrderTotal();
       calcShopee();
       await checkSession();
