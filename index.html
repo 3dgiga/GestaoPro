@@ -290,11 +290,26 @@
     .order-row.producao td{background:linear-gradient(90deg,rgba(59,130,246,.22),rgba(59,130,246,.06));border-bottom-color:rgba(59,130,246,.35)}
     .order-row.enviar td{background:linear-gradient(90deg,rgba(249,115,22,.25),rgba(249,115,22,.07));border-bottom-color:rgba(249,115,22,.38)}
     .order-row.concluido td{background:linear-gradient(90deg,rgba(34,197,94,.22),rgba(34,197,94,.06));border-bottom-color:rgba(34,197,94,.35)}
-    .status-select{font-weight:800;border-width:2px;text-transform:uppercase;letter-spacing:.3px}
-    .status-select.aguardando{background:rgba(245,158,11,.20);border-color:#f59e0b;color:#fde68a}
-    .status-select.producao{background:rgba(59,130,246,.20);border-color:#3b82f6;color:#bfdbfe}
-    .status-select.enviar{background:rgba(249,115,22,.22);border-color:#f97316;color:#fed7aa}
-    .status-select.concluido{background:rgba(34,197,94,.20);border-color:#22c55e;color:#bbf7d0}
+    .status-select{
+      font-weight:800;
+      border-width:2px;
+      text-transform:uppercase;
+      letter-spacing:.3px;
+      min-width:145px;
+      background:var(--bg-input)!important;
+      color:#f8fafc!important;
+      box-shadow:0 0 0 1px rgba(255,255,255,.04), 0 8px 18px rgba(0,0,0,.22);
+    }
+    .status-select option, .mini-select option{
+      background:#0b1120!important;
+      color:#f8fafc!important;
+      font-weight:700;
+    }
+    .status-select:focus{outline:none;box-shadow:0 0 0 3px rgba(129,140,248,.25)}
+    .status-select.aguardando{border-color:#f59e0b!important;color:#fde68a!important}
+    .status-select.producao{border-color:#3b82f6!important;color:#bfdbfe!important}
+    .status-select.enviar{border-color:#f97316!important;color:#fed7aa!important}
+    .status-select.concluido{border-color:#22c55e!important;color:#bbf7d0!important}
 
     .empty{
       text-align:center;padding:40px 10px;color:var(--text-muted);
@@ -316,6 +331,37 @@
     .toast.error{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);color:#fca5a5}
     @keyframes slideIn{from{opacity:0;transform:translateX(60px)}to{opacity:1;transform:translateX(0)}}
     @keyframes slideOut{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(60px)}}
+
+    .cashflow-card{
+      background:linear-gradient(135deg,rgba(34,197,94,.10),rgba(79,70,229,.10));
+      border:1px solid rgba(34,197,94,.25);
+      border-radius:14px;
+      padding:16px;
+      margin-bottom:20px;
+    }
+    .cashflow-top{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-bottom:12px;
+    }
+    .cashflow-top h3{font-size:16px;margin-bottom:3px}
+    .cashflow-top p{font-size:12px;color:var(--text-muted)}
+    .cashflow-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(170px,1fr));
+      gap:10px;
+    }
+    .cashflow-mini{
+      background:rgba(11,17,32,.72);
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:12px;
+    }
+    .cashflow-mini .lbl{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px}
+    .cashflow-mini .val{font-size:18px;font-weight:800}
 
     .chart-card{
       background:var(--bg-card);
@@ -556,6 +602,34 @@
           <div class="stat-box"><div class="stat-val" id="stProd" style="color:var(--orange)">0</div><div class="stat-lbl">Produção</div></div>
           <div class="stat-box"><div class="stat-val" id="stConc" style="color:var(--success)">0</div><div class="stat-lbl">Concluídos</div></div>
           <div class="stat-box"><div class="stat-val" id="stRec" style="color:var(--primary-light)">R$ 0,00</div><div class="stat-lbl">Receita</div></div>
+        </div>
+
+        <div class="cashflow-card">
+          <div class="cashflow-top">
+            <div>
+              <h3>💰 Fluxo de Caixa</h3>
+              <p>O valor entra aqui quando o pedido é marcado como concluído.</p>
+            </div>
+            <button class="btn btn-sm btn-outline" onclick="nav('pedidos', document.querySelectorAll('.nav-tab')[2])">Ver pedidos</button>
+          </div>
+          <div class="cashflow-grid">
+            <div class="cashflow-mini">
+              <div class="lbl">Caixa confirmado</div>
+              <div class="val" id="cashConfirmed" style="color:var(--success)">R$ 0,00</div>
+            </div>
+            <div class="cashflow-mini">
+              <div class="lbl">A receber</div>
+              <div class="val" id="cashPending" style="color:var(--warning)">R$ 0,00</div>
+            </div>
+            <div class="cashflow-mini">
+              <div class="lbl">Pedidos concluídos</div>
+              <div class="val" id="cashCompletedCount" style="color:var(--primary-light)">0</div>
+            </div>
+            <div class="cashflow-mini">
+              <div class="lbl">Total em pedidos</div>
+              <div class="val" id="cashTotalOrders" style="color:var(--info)">R$ 0,00</div>
+            </div>
+          </div>
         </div>
 
         <div class="dashboard-grid">
@@ -1955,7 +2029,40 @@
         toast('Erro ao alterar status.', 'error');
         return;
       }
-      toast(`Status alterado para "${STATUS[newStatus].l}"`, 'info');
+
+      if(newStatus === 'concluido'){
+        toast('Pedido concluído e valor lançado no fluxo de caixa!', 'success');
+      }else{
+        toast(`Status alterado para "${STATUS[newStatus].l}"`, 'info');
+      }
+
+      await refreshData();
+    }
+
+    async function concludeOrder(id){
+      const o = D.ord.find(x => String(x.id) === String(id));
+      if(!o){
+        toast('Pedido não encontrado.', 'error');
+        return;
+      }
+
+      if(o.status === 'concluido'){
+        toast('Esse pedido já está concluído no fluxo de caixa.', 'info');
+        return;
+      }
+
+      const total = Number(o.total ?? (Number(o.val || 0) * Number(o.qtd || 1)));
+      const ok = confirm(`Concluir este pedido e lançar R$ ${fmt(total)} no fluxo de caixa?`);
+      if(!ok) return;
+
+      const { error } = await SB.from('pedidos').update({ status: 'concluido' }).eq('id', id);
+      if(error){
+        console.error(error);
+        toast('Erro ao concluir pedido.', 'error');
+        return;
+      }
+
+      toast('Pedido concluído e valor lançado no fluxo de caixa!', 'success');
       await refreshData();
     }
 
@@ -2005,6 +2112,7 @@
           <td style="display:flex;gap:6px;flex-wrap:wrap">
             <button class="btn btn-sm btn-info" onclick="editOrder('${idAttr(o.id)}')">✏️ Editar</button>
             <button class="btn btn-sm btn-outline" onclick="openBudgetForOrder('${idAttr(o.id)}')">🧾 Orçar</button>
+            ${o.status !== 'concluido' ? `<button class="btn btn-sm btn-success" onclick="concludeOrder('${idAttr(o.id)}')">✅ Concluir</button>` : `<button class="btn btn-sm btn-outline" disabled style="opacity:.7;cursor:not-allowed">✅ Concluído</button>`}
             <button class="btn btn-sm btn-success" onclick="openDeliveryModal('${idAttr(o.id)}')">🚚 Entrega</button>
             <button class="btn btn-sm btn-danger" onclick="delOrder('${idAttr(o.id)}')">🗑️</button>
           </td>
@@ -2373,7 +2481,10 @@
       const t = D.ord.length;
       const p = D.ord.filter(o => o.status === 'producao').length;
       const co = D.ord.filter(o => o.status === 'concluido').length;
-      const r = D.ord.filter(o => o.status === 'concluido').reduce((s,o) => s + Number(o.total ?? (Number(o.val || 0) * Number(o.qtd || 1))), 0);
+      const orderTotal = o => Number(o.total ?? (Number(o.val || 0) * Number(o.qtd || 1)));
+      const r = D.ord.filter(o => o.status === 'concluido').reduce((s,o) => s + orderTotal(o), 0);
+      const pendingCash = D.ord.filter(o => o.status !== 'concluido').reduce((s,o) => s + orderTotal(o), 0);
+      const totalCash = D.ord.reduce((s,o) => s + orderTotal(o), 0);
 
       document.getElementById('stCli').textContent = D.cli.length;
       document.getElementById('dCli').textContent = D.cli.length;
@@ -2382,6 +2493,15 @@
       document.getElementById('stProd').textContent = p;
       document.getElementById('stConc').textContent = co;
       document.getElementById('stRec').textContent = `R$ ${fmt(r)}`;
+
+      const cashConfirmed = document.getElementById('cashConfirmed');
+      const cashPending = document.getElementById('cashPending');
+      const cashCompletedCount = document.getElementById('cashCompletedCount');
+      const cashTotalOrders = document.getElementById('cashTotalOrders');
+      if(cashConfirmed) cashConfirmed.textContent = `R$ ${fmt(r)}`;
+      if(cashPending) cashPending.textContent = `R$ ${fmt(pendingCash)}`;
+      if(cashCompletedCount) cashCompletedCount.textContent = co;
+      if(cashTotalOrders) cashTotalOrders.textContent = `R$ ${fmt(totalCash)}`;
 
       renderClients(document.querySelector('#s-clientes .search-box')?.value?.toLowerCase() || '');
       renderOrders(document.querySelector('#s-pedidos .search-box')?.value?.toLowerCase() || '');
