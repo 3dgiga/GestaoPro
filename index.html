@@ -862,8 +862,10 @@
               </div>
               <div class="form-row">
                 <div class="form-group"><label>Quantidade de Peças</label><input type="number" id="3dQtdPecas" min="1" value="1"></div>
+                <div class="form-group"><label>Valor unitário final sincronizado (R$)</label><input type="number" id="3dValorFinal" min="0" step="0.01" placeholder="Deixe 0 para usar o cálculo automático"></div>
                 <div class="form-group"><label>Prazo estimado para entrega</label><input type="text" id="3dPrazo" placeholder="Ex: 3 dias úteis"></div>
               </div>
+              <p style="font-size:11px;color:var(--text-muted);line-height:1.5;margin-top:-4px">Se preencher o valor unitário final, ele será usado para atualizar o pedido. Se deixar vazio ou 0, a calculadora usa o cálculo automático.</p>
             </div>
 
             <button class="calc-btn" onclick="calc3D()">🧮 Calcular Preço Final</button>
@@ -979,17 +981,15 @@
       concluido: { l:'Concluído', c:'concluido' }
     };
 
-    let D = { cli: [], ord: [] };
+    let D = { cli: [], ord: [], entregadores: [], budgets: [], cash: [] };
     let currentUser = null;
     let shVendedor = 0;
     let financeChart = null;
     let last3DQuote = '';
     let last3DBudget = null;
     let editingBudgetId = null;
-    const BUDGET_HISTORY_KEY = 'gestaopro_budget_history_v2';
     let editingClientId = null;
     let editingOrderId = null;
-    const DELIVERY_PEOPLE_KEY = 'gestaopro_delivery_people';
     const DELIVERY_SELECTED_KEY = 'gestaopro_delivery_selected';
     let currentDeliveryOrderId = null;
 
@@ -1077,16 +1077,7 @@
     }
 
     function getDeliveryPeople(){
-      try{
-        const saved = JSON.parse(localStorage.getItem(DELIVERY_PEOPLE_KEY) || '[]');
-        return Array.isArray(saved) ? saved.filter(p => p && p.id && p.nome && p.telefone) : [];
-      }catch(e){
-        return [];
-      }
-    }
-
-    function setDeliveryPeople(people){
-      localStorage.setItem(DELIVERY_PEOPLE_KEY, JSON.stringify(people || []));
+      return Array.isArray(D.entregadores) ? D.entregadores : [];
     }
 
     function renderDeliveryPeopleSelect(selectedId=''){
@@ -1163,7 +1154,10 @@
       currentDeliveryOrderId = null;
     }
 
-    function saveDeliveryPersonFromModal(){
+    async function saveDeliveryPersonFromModal(){
+      if(!currentUser){ toast('Faça login primeiro.', 'error'); return null; }
+      if(!SB){ toast('Supabase não carregou.', 'error'); return null; }
+
       const select = document.getElementById('deliveryPersonSelect');
       const nameEl = document.getElementById('deliveryPersonName');
       const phoneEl = document.getElementById('deliveryPersonPhone');
@@ -1183,33 +1177,52 @@
         return null;
       }
 
-      const people = getDeliveryPeople();
-      let id = select?.value || '';
-      const existingIndex = people.findIndex(p => String(p.id) === String(id));
+      const selectedId = select?.value || '';
+      let saved = null;
 
-      if(!id || existingIndex < 0){
-        id = 'entregador_' + Date.now();
-        people.push({ id, nome, telefone });
+      if(selectedId){
+        const { data, error } = await SB.from('entregadores')
+          .update({ nome, telefone })
+          .eq('id', selectedId)
+          .select('*')
+          .single();
+
+        if(error){
+          console.error(error);
+          toast('Erro ao atualizar entregador no Supabase.', 'error');
+          return null;
+        }
+        saved = mapDeliveryPerson(data);
       }else{
-        people[existingIndex] = { ...people[existingIndex], nome, telefone };
+        const { data, error } = await SB.from('entregadores')
+          .insert({ user_id: currentUser.id, nome, telefone })
+          .select('*')
+          .single();
+
+        if(error){
+          console.error(error);
+          toast('Erro ao salvar entregador no Supabase.', 'error');
+          return null;
+        }
+        saved = mapDeliveryPerson(data);
       }
 
-      setDeliveryPeople(people);
-      localStorage.setItem(DELIVERY_SELECTED_KEY, id);
-      renderDeliveryPeopleSelect(id);
-      selectDeliveryPerson(id);
-      toast('Entregador salvo!');
+      localStorage.setItem(DELIVERY_SELECTED_KEY, saved.id);
+      await refreshData();
+      renderDeliveryPeopleSelect(saved.id);
+      selectDeliveryPerson(saved.id);
+      toast('Entregador salvo online!');
 
-      return { id, nome, telefone, normalized };
+      return { ...saved, normalized };
     }
 
-    function sendDeliveryToSelected(){
+    async function sendDeliveryToSelected(){
       if(!currentDeliveryOrderId){
         toast('Pedido não identificado.', 'error');
         return;
       }
 
-      const person = saveDeliveryPersonFromModal();
+      const person = await saveDeliveryPersonFromModal();
       if(!person) return;
 
       deliveryWhatsApp(currentDeliveryOrderId, person);
@@ -1285,6 +1298,53 @@
       };
     }
 
+    function mapDeliveryPerson(row){
+      return {
+        id: row.id,
+        nome: row.nome || '',
+        telefone: row.telefone || '',
+        d: dbDateToBR(row.criado_em)
+      };
+    }
+
+    function mapBudget(row){
+      const horasDecimais = Number(row.horas_impressao || 0);
+      const horas = Math.floor(horasDecimais);
+      const minutos = Math.round((horasDecimais - horas) * 60);
+      return {
+        id: row.id,
+        user_id: row.user_id || '',
+        order_id: row.pedido_id || '',
+        client_id: row.cliente_id || '',
+        product: row.produto || '',
+        tipo_material: row.tipo_material || '',
+        horas_impressao: horasDecimais,
+        horas,
+        minutos,
+        quantidade: Number(row.quantidade || 1),
+        valor_unitario: Number(row.valor_unitario || 0),
+        valor_total: Number(row.valor_total || 0),
+        prazo_estimado: row.prazo_estimado || '',
+        message: row.mensagem || '',
+        created_at: row.criado_em || row.created_at || '',
+        updated_at: row.atualizado_em || row.criado_em || row.updated_at || ''
+      };
+    }
+
+    function mapCash(row){
+      return {
+        id: row.id,
+        user_id: row.user_id || '',
+        pedido_id: row.pedido_id || '',
+        tipo: row.tipo || 'entrada',
+        descricao: row.descricao || '',
+        valor: Number(row.valor || 0),
+        categoria: row.categoria || '',
+        data_lancamento: row.data_lancamento || row.criado_em || '',
+        created_at: row.criado_em || ''
+      };
+    }
+
     function getClient(id){
       return D.cli.find(c => String(c.id) === String(id));
     }
@@ -1300,7 +1360,7 @@
 
     async function loadData(){
       if(!currentUser){
-        D = { cli: [], ord: [] };
+        D = { cli: [], ord: [], entregadores: [], budgets: [], cash: [] };
         return;
       }
       if(!SB){
@@ -1308,9 +1368,12 @@
         return;
       }
 
-      const [clientesRes, pedidosRes] = await Promise.all([
+      const [clientesRes, pedidosRes, entregadoresRes, orcamentosRes, fluxoRes] = await Promise.all([
         SB.from('clientes').select('*').order('criado_em', { ascending: false }),
-        SB.from('pedidos').select('*').order('criado_em', { ascending: false })
+        SB.from('pedidos').select('*').order('criado_em', { ascending: false }),
+        SB.from('entregadores').select('*').order('criado_em', { ascending: false }),
+        SB.from('orcamentos').select('*').order('criado_em', { ascending: false }),
+        SB.from('fluxo_caixa').select('*').order('data_lancamento', { ascending: false })
       ]);
 
       if(clientesRes.error){
@@ -1321,9 +1384,28 @@
         console.error(pedidosRes.error);
         toast('Erro ao carregar pedidos. Confira se a tabela e RLS foram criadas.', 'error');
       }
+      if(entregadoresRes.error){
+        console.error(entregadoresRes.error);
+        toast('Erro ao carregar entregadores. Confira a tabela entregadores e as políticas RLS.', 'error');
+      }
+      if(orcamentosRes.error){
+        console.error(orcamentosRes.error);
+        toast('Erro ao carregar orçamentos. Confira a tabela orcamentos e as políticas RLS.', 'error');
+      }
+      if(fluxoRes.error){
+        console.error(fluxoRes.error);
+        toast('Erro ao carregar fluxo de caixa. Confira a tabela fluxo_caixa e as políticas RLS.', 'error');
+      }
 
       D.cli = (clientesRes.data || []).map(mapClient);
       D.ord = (pedidosRes.data || []).map(mapOrder);
+      D.entregadores = (entregadoresRes.data || []).map(mapDeliveryPerson);
+      D.budgets = (orcamentosRes.data || []).map(mapBudget);
+      D.cash = (fluxoRes.data || []).map(mapCash);
+
+      if(!fluxoRes.error){
+        await syncMissingCashEntries();
+      }
     }
 
     async function refreshData(){
@@ -1379,7 +1461,7 @@
     async function handleLogout(){
       if(SB) await SB.auth.signOut();
       currentUser = null;
-      D = { cli: [], ord: [] };
+      D = { cli: [], ord: [], entregadores: [], budgets: [], cash: [] };
       showLogin();
       document.getElementById('logUser').value = '';
       document.getElementById('logPass').value = '';
@@ -1637,7 +1719,9 @@
 
       if(updateQuantity){
         const qtdEl = document.getElementById('3dQtdPecas');
+        const valorFinalEl = document.getElementById('3dValorFinal');
         if(qtdEl) qtdEl.value = Math.max(1, Number(order.qtd || 1));
+        if(valorFinalEl) valorFinalEl.value = Number(order.val || 0).toFixed(2);
       }
 
       if(resumo){
@@ -1666,16 +1750,24 @@
     }
 
     function getBudgetHistory(){
-      try{
-        return JSON.parse(localStorage.getItem(BUDGET_HISTORY_KEY) || '[]');
-      }catch(e){
-        console.error(e);
-        return [];
-      }
+      return Array.isArray(D.budgets) ? D.budgets : [];
     }
 
     function setBudgetHistory(list){
-      localStorage.setItem(BUDGET_HISTORY_KEY, JSON.stringify(list));
+      D.budgets = Array.isArray(list) ? list : [];
+    }
+
+    function budgetClient(budget){
+      const byClient = budget?.client_id ? getClient(budget.client_id) : null;
+      if(byClient) return byClient;
+      const order = budget?.order_id ? D.ord.find(o => String(o.id) === String(budget.order_id)) : null;
+      return order ? getClient(order.cliId) : null;
+    }
+
+    function budgetProduct(budget){
+      if(budget?.product) return budget.product;
+      const order = budget?.order_id ? D.ord.find(o => String(o.id) === String(budget.order_id)) : null;
+      return order?.prod || '';
     }
 
     function budgetDateLabel(iso){
@@ -1699,10 +1791,12 @@
       });
       const material = document.getElementById('3dTipoMaterial');
       const qtd = document.getElementById('3dQtdPecas');
+      const valorFinal = document.getElementById('3dValorFinal');
       const prazo = document.getElementById('3dPrazo');
       const pedido = document.getElementById('3dPedido');
       if(material) material.value = '';
       if(qtd) qtd.value = '1';
+      if(valorFinal) valorFinal.value = '';
       if(prazo) prazo.value = '';
       if(pedido) pedido.value = '';
       applyBudgetOrderInfo(false);
@@ -1721,11 +1815,10 @@
       if(!wrap) return;
 
       const query = String(q || '').toLowerCase();
-      const userId = currentUser?.id || '';
       const list = getBudgetHistory()
-        .filter(b => !userId || !b.user_id || String(b.user_id) === String(userId))
         .filter(b => {
-          const hay = [b.client_name, b.client_phone, b.product, b.tipo_material, b.prazo_estimado, b.message, b.order_id].join(' ').toLowerCase();
+          const client = budgetClient(b);
+          const hay = [client?.nom, client?.tel, budgetProduct(b), b.tipo_material, b.prazo_estimado, b.message, b.order_id].join(' ').toLowerCase();
           return !query || hay.includes(query);
         })
         .sort((a,b) => new Date(b.updated_at || b.created_at || 0) - new Date(a.updated_at || a.created_at || 0));
@@ -1752,11 +1845,13 @@
               </tr>
             </thead>
             <tbody>
-              ${list.map(b => `
+              ${list.map(b => {
+                const client = budgetClient(b);
+                return `
                 <tr>
                   <td style="font-size:12px;color:var(--text-muted)">${esc(budgetDateLabel(b.updated_at || b.created_at))}</td>
-                  <td><strong>${esc(b.client_name || '-')}</strong><br><span style="font-size:11px;color:var(--text-muted)">${esc(b.client_phone || '')}</span></td>
-                  <td>${esc(b.product || '-')}</td>
+                  <td><strong>${esc(client?.nom || '-')}</strong><br><span style="font-size:11px;color:var(--text-muted)">${esc(client?.tel || '')}</span></td>
+                  <td>${esc(budgetProduct(b) || '-')}</td>
                   <td>${esc(b.tipo_material || '-')}</td>
                   <td>${esc(b.quantidade || 1)}</td>
                   <td style="font-weight:800;color:var(--success)">R$ ${fmt(b.valor_unitario)}</td>
@@ -1766,8 +1861,8 @@
                     <button class="btn btn-sm btn-success" onclick="sendBudgetFromHistory('${idAttr(b.id)}')">💬 WhatsApp</button>
                     <button class="btn btn-sm btn-danger" onclick="deleteBudget('${idAttr(b.id)}')">🗑️</button>
                   </td>
-                </tr>
-              `).join('')}
+                </tr>`;
+              }).join('')}
             </tbody>
           </table>
         </div>
@@ -1786,15 +1881,16 @@
       set('3dTipoMaterial', budget.tipo_material || '');
       set('3dHoras', budget.horas || 0);
       set('3dMin', budget.minutos || 0);
-      set('3dMat', budget.peso_material || 0);
-      set('3dPrecoKg', budget.preco_kg || 0);
-      set('3dEnergia', budget.energia_hora || 0);
-      set('3dDesgaste', budget.desgaste_hora || 0);
-      set('3dPos', budget.pos_processamento || 0);
-      set('3dEmb', budget.embalagem_envio || 0);
-      set('3dImp', budget.impostos_percentual || 0);
-      set('3dLucro', budget.lucro_percentual || 0);
+      set('3dMat', 0);
+      set('3dPrecoKg', 0);
+      set('3dEnergia', 0);
+      set('3dDesgaste', 0);
+      set('3dPos', 0);
+      set('3dEmb', 0);
+      set('3dImp', 0);
+      set('3dLucro', 0);
       set('3dQtdPecas', budget.quantidade || 1);
+      set('3dValorFinal', Number(budget.valor_unitario || 0).toFixed(2));
       set('3dPrazo', budget.prazo_estimado || '');
 
       const badge = document.getElementById('budgetEditingBadge');
@@ -1804,25 +1900,48 @@
 
       calc3D();
       document.getElementById('s-custos')?.scrollIntoView({ behavior:'smooth', block:'start' });
-      toast('Orçamento carregado para edição.', 'info');
+      toast('Orçamento online carregado para edição.', 'info');
     }
 
-    function deleteBudget(id){
-      if(!confirm('Excluir este orçamento do histórico?')) return;
-      const list = getBudgetHistory().filter(b => String(b.id) !== String(id));
-      setBudgetHistory(list);
+    async function deleteBudget(id){
+      if(!confirm('Excluir este orçamento do histórico online?')) return;
+      const { error } = await SB.from('orcamentos').delete().eq('id', id);
+      if(error){
+        console.error(error);
+        toast('Erro ao excluir orçamento no Supabase.', 'error');
+        return;
+      }
       if(String(editingBudgetId) === String(id)) resetBudgetEditState();
+      await refreshData();
       renderBudgetHistory(document.getElementById('budgetHistorySearch')?.value?.toLowerCase() || '');
-      toast('Orçamento excluído.', 'info');
+      toast('Orçamento excluído do Supabase.', 'info');
     }
 
     function sendBudgetFromHistory(id){
       const budget = getBudgetHistory().find(b => String(b.id) === String(id));
       if(!budget){ toast('Orçamento não encontrado.', 'error'); return; }
-      const normalized = normalizePhoneForWhatsApp(budget.client_phone || '');
+      const client = budgetClient(budget);
+      const normalized = normalizePhoneForWhatsApp(client?.tel || '');
       const cleanMsg = cleanWhatsAppMessage(budget.message || '');
       const url = normalized ? `https://wa.me/${normalized}?text=${encodeURIComponent(cleanMsg)}` : `https://wa.me/?text=${encodeURIComponent(cleanMsg)}`;
       window.open(url, '_blank');
+    }
+
+    function budgetToDbPayload(budget){
+      return {
+        user_id: currentUser.id,
+        pedido_id: budget.order_id || null,
+        cliente_id: budget.client_id || null,
+        produto: budget.product || budgetProduct(budget) || null,
+        tipo_material: budget.tipo_material || null,
+        horas_impressao: Number(budget.horas_impressao || 0),
+        quantidade: Number(budget.quantidade || 1),
+        valor_unitario: Number(budget.valor_unitario || 0),
+        valor_total: Number(budget.valor_total || 0),
+        prazo_estimado: budget.prazo_estimado || null,
+        mensagem: budget.message || last3DQuote || '',
+        atualizado_em: new Date().toISOString()
+      };
     }
 
     async function syncLinkedOrderFromBudget(budget){
@@ -1840,6 +1959,10 @@
         console.error(error);
         toast('Orçamento salvo, mas não consegui atualizar o pedido vinculado.', 'error');
         return false;
+      }
+
+      if(order.status === 'concluido'){
+        await upsertCashEntryForOrder({ ...order, qtd: payload.quantidade, val: payload.valor_unitario, total: payload.quantidade * payload.valor_unitario });
       }
       return true;
     }
@@ -2004,9 +2127,15 @@
           return;
         }
 
+        const oldOrder = D.ord.find(o => String(o.id) === String(editingOrderId));
         toast('Pedido atualizado!');
         resetOrderForm();
         await refreshData();
+        if(oldOrder?.status === 'concluido'){
+          const updatedOrder = D.ord.find(o => String(o.id) === String(oldOrder.id));
+          if(updatedOrder) await upsertCashEntryForOrder(updatedOrder);
+          await refreshData();
+        }
         return;
       }
 
@@ -2022,7 +2151,76 @@
       await refreshData();
     }
 
+    function cashEntryForOrder(orderId){
+      return D.cash.find(c => String(c.pedido_id) === String(orderId) && c.tipo === 'entrada');
+    }
+
+    function cashPayloadForOrder(order){
+      const total = orderTotal(order);
+      return {
+        user_id: currentUser.id,
+        pedido_id: order.id,
+        tipo: 'entrada',
+        descricao: `Pedido #${String(order.id).slice(0,8)} - ${getClientName(order.cliId)} - ${order.prod || 'Pedido'}`,
+        valor: Number(total || 0),
+        categoria: 'Pedidos',
+        data_lancamento: new Date().toISOString()
+      };
+    }
+
+    async function upsertCashEntryForOrder(order){
+      if(!currentUser || !order?.id) return false;
+      const payload = cashPayloadForOrder(order);
+      const existing = cashEntryForOrder(order.id);
+
+      if(existing){
+        const { error } = await SB.from('fluxo_caixa')
+          .update({ descricao: payload.descricao, valor: payload.valor, categoria: payload.categoria })
+          .eq('id', existing.id);
+        if(error){ console.error(error); toast('Pedido concluído, mas não consegui atualizar o fluxo de caixa.', 'error'); return false; }
+        return true;
+      }
+
+      const { error } = await SB.from('fluxo_caixa').insert(payload);
+      if(error){ console.error(error); toast('Pedido concluído, mas não consegui lançar no fluxo de caixa.', 'error'); return false; }
+      return true;
+    }
+
+    async function removeCashEntryForOrder(orderId){
+      if(!currentUser || !orderId) return true;
+      const existing = cashEntryForOrder(orderId);
+      if(!existing) return true;
+      const { error } = await SB.from('fluxo_caixa').delete().eq('id', existing.id);
+      if(error){ console.error(error); toast('Status alterado, mas não consegui remover o lançamento do fluxo de caixa.', 'error'); return false; }
+      return true;
+    }
+
+    async function syncMissingCashEntries(){
+      if(!currentUser || !SB) return;
+      const missing = D.ord.filter(o => o.status === 'concluido' && !cashEntryForOrder(o.id));
+      if(!missing.length) return;
+
+      const rows = missing.map(cashPayloadForOrder);
+      const { error } = await SB.from('fluxo_caixa').insert(rows);
+      if(error){
+        console.error(error);
+        toast('Alguns pedidos concluídos ainda não foram migrados para o fluxo de caixa.', 'error');
+        return;
+      }
+
+      const { data, error: reloadError } = await SB.from('fluxo_caixa').select('*').order('data_lancamento', { ascending: false });
+      if(!reloadError) D.cash = (data || []).map(mapCash);
+    }
+
     async function updateOrderStatus(id, newStatus){
+      const o = D.ord.find(x => String(x.id) === String(id));
+      if(!o){ toast('Pedido não encontrado.', 'error'); return; }
+
+      if(o.status === 'concluido' && newStatus !== 'concluido'){
+        const ok = confirm('Esse pedido já alimentou o fluxo de caixa. Alterar o status vai remover esse lançamento. Continuar?');
+        if(!ok){ renderOrders(document.querySelector('#s-pedidos .search-box')?.value?.toLowerCase() || ''); return; }
+      }
+
       const { error } = await SB.from('pedidos').update({ status: newStatus }).eq('id', id);
       if(error){
         console.error(error);
@@ -2031,8 +2229,10 @@
       }
 
       if(newStatus === 'concluido'){
-        toast('Pedido concluído e valor lançado no fluxo de caixa!', 'success');
+        await upsertCashEntryForOrder({ ...o, status: 'concluido' });
+        toast('Pedido concluído e lançado no fluxo de caixa online!', 'success');
       }else{
+        if(o.status === 'concluido') await removeCashEntryForOrder(id);
         toast(`Status alterado para "${STATUS[newStatus].l}"`, 'info');
       }
 
@@ -2047,12 +2247,14 @@
       }
 
       if(o.status === 'concluido'){
+        await upsertCashEntryForOrder(o);
+        await refreshData();
         toast('Esse pedido já está concluído no fluxo de caixa.', 'info');
         return;
       }
 
-      const total = Number(o.total ?? (Number(o.val || 0) * Number(o.qtd || 1)));
-      const ok = confirm(`Concluir este pedido e lançar R$ ${fmt(total)} no fluxo de caixa?`);
+      const total = orderTotal(o);
+      const ok = confirm(`Concluir este pedido e lançar R$ ${fmt(total)} no fluxo de caixa online?`);
       if(!ok) return;
 
       const { error } = await SB.from('pedidos').update({ status: 'concluido' }).eq('id', id);
@@ -2062,12 +2264,14 @@
         return;
       }
 
-      toast('Pedido concluído e valor lançado no fluxo de caixa!', 'success');
+      await upsertCashEntryForOrder({ ...o, status: 'concluido' });
+      toast('Pedido concluído e lançado no fluxo de caixa online!', 'success');
       await refreshData();
     }
 
     async function delOrder(id){
       if(confirm('Excluir pedido?')){
+        await removeCashEntryForOrder(id);
         const { error } = await SB.from('pedidos').delete().eq('id', id);
         if(error){
           console.error(error);
@@ -2121,32 +2325,37 @@
     }
 
     function groupOrdersByFilter(filter, startDate, endDate){
-      let orders = D.ord.filter(o => o.status === 'concluido');
+      let entries = D.cash.filter(c => c.tipo === 'entrada');
       const now = new Date();
 
+      const entryDate = c => {
+        const dt = new Date(c.data_lancamento || c.created_at || '');
+        return Number.isNaN(dt.getTime()) ? null : dt;
+      };
+
       if(filter === 'dia'){
-        orders = orders.filter(o => {
-          const dt = parseBRDate(o.d);
+        entries = entries.filter(c => {
+          const dt = entryDate(c);
           return dt && dt.toDateString() === now.toDateString();
         });
       } else if(filter === 'semana'){
         const start = new Date(now);
         start.setHours(0,0,0,0);
         start.setDate(now.getDate() - 6);
-        orders = orders.filter(o => {
-          const dt = parseBRDate(o.d);
+        entries = entries.filter(c => {
+          const dt = entryDate(c);
           return dt && dt >= start && dt <= now;
         });
       } else if(filter === 'mes'){
-        orders = orders.filter(o => {
-          const dt = parseBRDate(o.d);
+        entries = entries.filter(c => {
+          const dt = entryDate(c);
           return dt && dt.getMonth() === now.getMonth() && dt.getFullYear() === now.getFullYear();
         });
       } else if(filter === 'personalizado'){
         const start = startDate ? new Date(startDate + 'T00:00:00') : null;
         const end = endDate ? new Date(endDate + 'T23:59:59') : null;
-        orders = orders.filter(o => {
-          const dt = parseBRDate(o.d);
+        entries = entries.filter(c => {
+          const dt = entryDate(c);
           if(!dt) return false;
           if(start && dt < start) return false;
           if(end && dt > end) return false;
@@ -2155,12 +2364,11 @@
       }
 
       const map = {};
-
-      orders.forEach(o => {
-        const dt = parseBRDate(o.d);
+      entries.forEach(c => {
+        const dt = entryDate(c);
         if(!dt) return;
         const key = dt.toLocaleDateString('pt-BR');
-        map[key] = (map[key] || 0) + Number(o.total ?? (Number(o.val || 0) * Number(o.qtd || 1)));
+        map[key] = (map[key] || 0) + Number(c.valor || 0);
       });
 
       const labels = Object.keys(map);
@@ -2252,7 +2460,13 @@
       const base = cM + cE + cD + pos + emb;
       const vImp = base * imp / 100;
       const vLuc = (base + vImp) * lucro / 100;
-      const unit = base + vImp + vLuc;
+      const calculatedUnit = base + vImp + vLuc;
+      const valorFinalEl = document.getElementById('3dValorFinal');
+      const manualUnit = Number(valorFinalEl?.value || 0);
+      const unit = manualUnit > 0 ? manualUnit : calculatedUnit;
+      if(valorFinalEl && (!valorFinalEl.value || Number(valorFinalEl.value) <= 0)){
+        valorFinalEl.value = unit.toFixed(2);
+      }
       const totalServico = unit * qtdPecas;
 
       const pedidoInfo = budgetOrder ?
@@ -2371,39 +2585,42 @@
         if(!last3DBudget){ toast('Calcule o orçamento primeiro.', 'error'); return; }
       }
 
-      const history = getBudgetHistory();
-      const now = new Date().toISOString();
-      let budget = { ...last3DBudget, updated_at: now };
+      let budget = { ...last3DBudget, updated_at: new Date().toISOString() };
+      const payload = budgetToDbPayload(budget);
+      let res;
 
       if(editingBudgetId){
-        const idx = history.findIndex(b => String(b.id) === String(editingBudgetId));
-        if(idx >= 0){
-          budget = { ...history[idx], ...budget, id: editingBudgetId, created_at: history[idx].created_at || now, updated_at: now };
-          history[idx] = budget;
-        }else{
-          budget.id = editingBudgetId;
-          budget.created_at = now;
-          history.unshift(budget);
-        }
+        res = await SB.from('orcamentos')
+          .update(payload)
+          .eq('id', editingBudgetId)
+          .select('*')
+          .single();
       }else{
-        budget.id = 'orc_' + Date.now();
-        budget.created_at = now;
-        history.unshift(budget);
+        res = await SB.from('orcamentos')
+          .insert(payload)
+          .select('*')
+          .single();
       }
 
-      setBudgetHistory(history);
+      if(res.error){
+        console.error(res.error);
+        toast('Erro ao salvar orçamento no Supabase.', 'error');
+        return;
+      }
+
+      budget = mapBudget(res.data);
       last3DBudget = budget;
       last3DQuote = budget.message || last3DQuote;
 
-      const synced = await syncLinkedOrderFromBudget(budget);
+      const synced = await syncLinkedOrderFromBudget({ ...budget, message: last3DQuote });
       await refreshData();
       renderBudgetHistory(document.getElementById('budgetHistorySearch')?.value?.toLowerCase() || '');
       resetBudgetEditState();
 
       if(budget.order_id && synced){
-        toast('Orçamento salvo e pedido vinculado atualizado!');
+        toast('Orçamento salvo online e pedido vinculado atualizado!');
       }else{
-        toast('Orçamento salvo no histórico!');
+        toast('Orçamento salvo online no histórico!');
       }
     }
 
@@ -2482,7 +2699,9 @@
       const p = D.ord.filter(o => o.status === 'producao').length;
       const co = D.ord.filter(o => o.status === 'concluido').length;
       const orderTotal = o => Number(o.total ?? (Number(o.val || 0) * Number(o.qtd || 1)));
-      const r = D.ord.filter(o => o.status === 'concluido').reduce((s,o) => s + orderTotal(o), 0);
+      const cashIn = D.cash.filter(c => c.tipo === 'entrada').reduce((s,c) => s + Number(c.valor || 0), 0);
+      const cashOut = D.cash.filter(c => c.tipo === 'saida').reduce((s,c) => s + Number(c.valor || 0), 0);
+      const r = cashIn - cashOut;
       const pendingCash = D.ord.filter(o => o.status !== 'concluido').reduce((s,o) => s + orderTotal(o), 0);
       const totalCash = D.ord.reduce((s,o) => s + orderTotal(o), 0);
 
@@ -2506,6 +2725,7 @@
       renderClients(document.querySelector('#s-clientes .search-box')?.value?.toLowerCase() || '');
       renderOrders(document.querySelector('#s-pedidos .search-box')?.value?.toLowerCase() || '');
       fillSelects();
+      renderBudgetHistory(document.getElementById('budgetHistorySearch')?.value?.toLowerCase() || '');
       renderFinanceChart();
       setTimeout(refreshTabNavigation, 0);
     }
