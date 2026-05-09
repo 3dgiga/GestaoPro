@@ -71,11 +71,12 @@
     }
 
     .login-logo{text-align:center;margin-bottom:30px}
-    .login-logo .icon{
+    .login-logo .app-logo{
       width:64px;height:64px;border-radius:18px;
-      display:flex;align-items:center;justify-content:center;
-      margin:0 auto 14px;font-size:28px;
-      background:linear-gradient(135deg,var(--orange),var(--primary));
+      display:block;object-fit:contain;
+      margin:0 auto 14px;padding:8px;
+      background:rgba(255,255,255,.06);
+      border:1px solid var(--border);
     }
     .login-logo h1{
       font-size:24px;font-weight:800;
@@ -113,8 +114,12 @@
     .header-logo{
       width:38px;height:38px;border-radius:10px;
       display:flex;align-items:center;justify-content:center;
-      font-size:18px;
-      background:linear-gradient(135deg,var(--orange),var(--primary));
+      background:rgba(255,255,255,.06);
+      border:1px solid var(--border);
+      overflow:hidden;
+    }
+    .header-logo .app-logo{
+      width:100%;height:100%;object-fit:contain;display:block;padding:5px;
     }
     .header h2{font-size:17px;font-weight:700}
     .user-badge{
@@ -403,7 +408,7 @@
   <div id="loginScreen">
     <div class="login-container">
       <div class="login-logo">
-        <div class="icon">⚡</div>
+        <img src="logo.jpg" alt="Logo GestãoPro Studio Giga" class="app-logo">
         <h1>GestãoPro Studio Giga</h1>
         <p>Sistema de Gerenciamento Empresarial</p>
       </div>
@@ -425,7 +430,7 @@
   <div id="mainApp">
     <header class="header">
       <div class="header-left">
-        <div class="header-logo">⚡</div>
+        <div class="header-logo"><img src="logo.jpg" alt="Logo GestãoPro Studio Giga" class="app-logo"></div>
         <h2>GestãoPro Studio Giga</h2>
       </div>
       <div class="header-right">
@@ -505,8 +510,8 @@
         <p class="section-subtitle">Somente os campos que você pediu</p>
 
         <div class="form-card">
-          <h3>➕ Novo Cliente</h3>
-          <form onsubmit="addClient(event)">
+          <h3 id="clientFormTitle">➕ Novo Cliente</h3>
+          <form id="clientForm" onsubmit="addClient(event)">
             <div class="form-row">
               <div class="form-group">
                 <label>Nome</label>
@@ -541,7 +546,10 @@
               </div>
             </div>
 
-            <button type="submit" class="btn btn-success" style="width:100%">✅ Cadastrar Cliente</button>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button type="submit" id="clientSubmitBtn" class="btn btn-success" style="flex:1;justify-content:center">✅ Cadastrar Cliente</button>
+              <button type="button" id="clientCancelBtn" class="btn btn-outline" style="display:none" onclick="cancelClientEdit()">Cancelar edição</button>
+            </div>
           </form>
         </div>
 
@@ -559,8 +567,8 @@
         <p class="section-subtitle">Lista de pedidos com alteração rápida de status</p>
 
         <div class="form-card">
-          <h3>➕ Novo Pedido</h3>
-          <form onsubmit="addOrder(event)">
+          <h3 id="orderFormTitle">➕ Novo Pedido</h3>
+          <form id="orderForm" onsubmit="addOrder(event)">
             <div class="form-row">
               <div class="form-group">
                 <label>Cliente</label>
@@ -593,8 +601,25 @@
               </div>
             </div>
 
-            <button type="submit" class="btn btn-warning" style="width:100%">📦 Criar Pedido</button>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button type="submit" id="orderSubmitBtn" class="btn btn-warning" style="flex:1;justify-content:center">📦 Criar Pedido</button>
+              <button type="button" id="orderCancelBtn" class="btn btn-outline" style="display:none" onclick="cancelOrderEdit()">Cancelar edição</button>
+            </div>
           </form>
+        </div>
+
+        <div class="form-card">
+          <h3>🚚 Entregador</h3>
+          <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px">Cadastre o celular do entregador. Ao clicar em “Entrega”, a mensagem do pedido será enviada automaticamente para esse WhatsApp.</p>
+          <div class="form-row" style="align-items:end">
+            <div class="form-group">
+              <label>Celular do entregador</label>
+              <input type="text" id="deliveryPhone" placeholder="(00) 00000-0000" maxlength="15" oninput="maskPhone(this)">
+            </div>
+            <div class="form-group">
+              <button type="button" class="btn btn-info" style="width:100%;justify-content:center" onclick="saveDeliveryPhone()">💾 Salvar número</button>
+            </div>
+          </div>
         </div>
 
         <div class="table-container">
@@ -783,6 +808,9 @@
     let financeChart = null;
     let last3DQuote = '';
     let last3DBudget = null;
+    let editingClientId = null;
+    let editingOrderId = null;
+    const DELIVERY_PHONE_KEY = 'gestaopro_delivery_phone';
 
     function fmt(v){
       return Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -827,6 +855,7 @@
       const initialEl = document.getElementById('userInitial');
       if(emailEl) emailEl.textContent = email;
       if(initialEl) initialEl.textContent = initial;
+      loadDeliveryPhone();
       updateAll();
     }
 
@@ -849,6 +878,43 @@
       let v = el.value.replace(/\D/g,'').slice(0,8);
       if(v.length > 5) v = v.replace(/^(\d{5})(\d{0,3}).*/, '$1-$2');
       el.value = v;
+    }
+
+    function normalizePhoneForWhatsApp(phone){
+      const digits = String(phone || '').replace(/\D/g, '');
+      if(!digits) return '';
+      if(digits.startsWith('55') && digits.length >= 12) return digits;
+      if(digits.length === 10 || digits.length === 11) return '55' + digits;
+      if(digits.length >= 12) return digits;
+      return '';
+    }
+
+    function loadDeliveryPhone(){
+      const el = document.getElementById('deliveryPhone');
+      if(!el) return;
+      el.value = localStorage.getItem(DELIVERY_PHONE_KEY) || '';
+      if(el.value) maskPhone(el);
+    }
+
+    function saveDeliveryPhone(){
+      const el = document.getElementById('deliveryPhone');
+      const raw = el?.value?.trim() || '';
+      const normalized = normalizePhoneForWhatsApp(raw);
+
+      if(!normalized){
+        toast('Informe um celular válido para o entregador.', 'error');
+        el?.focus();
+        return;
+      }
+
+      localStorage.setItem(DELIVERY_PHONE_KEY, raw);
+      toast('Celular do entregador salvo!');
+    }
+
+    function getDeliveryPhone(){
+      const el = document.getElementById('deliveryPhone');
+      const raw = (el?.value?.trim() || localStorage.getItem(DELIVERY_PHONE_KEY) || '').trim();
+      return { raw, normalized: normalizePhoneForWhatsApp(raw) };
     }
 
     function dbDateToBR(str){
@@ -1006,12 +1072,69 @@
       updateAll();
     }
 
+    function resetClientForm(){
+      editingClientId = null;
+      const form = document.getElementById('clientForm');
+      if(form) form.reset();
+
+      const title = document.getElementById('clientFormTitle');
+      const btn = document.getElementById('clientSubmitBtn');
+      const cancel = document.getElementById('clientCancelBtn');
+
+      if(title) title.textContent = '➕ Novo Cliente';
+      if(btn){
+        btn.textContent = '✅ Cadastrar Cliente';
+        btn.className = 'btn btn-success';
+        btn.style.flex = '1';
+        btn.style.justifyContent = 'center';
+      }
+      if(cancel) cancel.style.display = 'none';
+    }
+
+    function cancelClientEdit(){
+      resetClientForm();
+      toast('Edição de cliente cancelada.', 'info');
+    }
+
+    function editClient(id){
+      const c = D.cli.find(x => String(x.id) === String(id));
+      if(!c){
+        toast('Cliente não encontrado.', 'error');
+        return;
+      }
+
+      editingClientId = c.id;
+      document.getElementById('cNom').value = c.nom || '';
+      document.getElementById('cTel').value = c.tel || '';
+      document.getElementById('cRua').value = c.rua || '';
+      document.getElementById('cNum').value = c.num || '';
+      document.getElementById('cBairro').value = c.bairro || '';
+      document.getElementById('cCep').value = c.cep || '';
+      document.getElementById('cObs').value = c.obs || '';
+
+      const title = document.getElementById('clientFormTitle');
+      const btn = document.getElementById('clientSubmitBtn');
+      const cancel = document.getElementById('clientCancelBtn');
+
+      if(title) title.textContent = '✏️ Editar Cliente';
+      if(btn){
+        btn.textContent = '💾 Salvar Alterações';
+        btn.className = 'btn btn-info';
+        btn.style.flex = '1';
+        btn.style.justifyContent = 'center';
+      }
+      if(cancel) cancel.style.display = 'inline-flex';
+
+      document.getElementById('cNom')?.focus();
+      document.getElementById('s-clientes')?.scrollIntoView({ behavior:'smooth', block:'start' });
+      toast('Edite os dados e clique em Salvar Alterações.', 'info');
+    }
+
     async function addClient(e){
       e.preventDefault();
       if(!currentUser){ toast('Faça login primeiro.', 'error'); return; }
 
       const payload = {
-        user_id: currentUser.id,
         nome: document.getElementById('cNom').value.trim(),
         telefone: document.getElementById('cTel').value.trim(),
         rua: document.getElementById('cRua').value.trim(),
@@ -1021,14 +1144,28 @@
         observacoes: document.getElementById('cObs').value.trim()
       };
 
-      const { error } = await SB.from('clientes').insert(payload);
+      if(editingClientId){
+        const { error } = await SB.from('clientes').update(payload).eq('id', editingClientId);
+        if(error){
+          console.error(error);
+          toast('Erro ao atualizar cliente.', 'error');
+          return;
+        }
+
+        toast(`Cliente "${payload.nome}" atualizado!`);
+        resetClientForm();
+        await refreshData();
+        return;
+      }
+
+      const { error } = await SB.from('clientes').insert({ ...payload, user_id: currentUser.id });
       if(error){
         console.error(error);
         toast('Erro ao cadastrar cliente.', 'error');
         return;
       }
 
-      e.target.reset();
+      resetClientForm();
       toast(`Cliente "${payload.nome}" cadastrado!`);
       await refreshData();
     }
@@ -1046,6 +1183,7 @@
           toast('Erro ao excluir cliente.', 'error');
           return;
         }
+        if(String(editingClientId) === String(id)) resetClientForm();
         toast('Cliente removido', 'info');
         await refreshData();
       }
@@ -1095,7 +1233,8 @@
                   <td>${esc(c.bairro || '-')}</td>
                   <td>${esc(c.cep || '-')}</td>
                   <td>${esc(c.obs || '-')}</td>
-                  <td>
+                  <td style="display:flex;gap:6px;flex-wrap:wrap">
+                    <button class="btn btn-sm btn-info" onclick="editClient('${idAttr(c.id)}')">✏️ Editar</button>
                     <button class="btn btn-sm btn-danger" onclick="delClient('${idAttr(c.id)}')">🗑️</button>
                   </td>
                 </tr>
@@ -1130,6 +1269,17 @@
       const o = D.ord.find(x => String(x.id) === String(id));
       if(!o) return;
 
+      const { raw, normalized } = getDeliveryPhone();
+      const deliveryInput = document.getElementById('deliveryPhone');
+
+      if(!normalized){
+        toast('Informe e salve o celular do entregador antes de enviar.', 'error');
+        deliveryInput?.focus();
+        return;
+      }
+
+      if(raw) localStorage.setItem(DELIVERY_PHONE_KEY, raw);
+
       const c = getClient(o.cliId);
       if(!c){
         toast('Cliente não encontrado para este pedido.', 'error');
@@ -1145,21 +1295,97 @@
         return;
       }
 
-      const msg = `🚚 *ENTREGA - GestãoPro Studio Giga*\n\n` +
-        `👤 *Cliente:* ${c.nom || '-'}\n` +
-        `📞 *Telefone:* ${c.tel || '-'}\n\n` +
-        `📦 *Pedido:* #${String(o.id).slice(0,8)}\n` +
-        `🛍️ *Produto:* ${o.prod || '-'}\n` +
-        `🔢 *Quantidade:* ${o.qtd || 1}\n` +
-        `💰 *Valor unitário:* R$ ${fmt(o.val)}\n` +
-        `💵 *Total:* R$ ${fmt(total)}\n` +
-        `📌 *Status:* ${STATUS[o.status]?.l || o.status}\n` +
-        `📝 *Obs do pedido:* ${o.obs || '-'}\n\n` +
-        `📍 *Endereço:* ${address}\n` +
-        `🗺️ *Abrir no Google Maps:* ${maps}\n\n` +
+      const msg = `🚚 *ENTREGA - GestãoPro Studio Giga*
+
+` +
+        `👤 *Cliente:* ${c.nom || '-'}
+` +
+        `📞 *Telefone:* ${c.tel || '-'}
+
+` +
+        `📦 *Pedido:* #${String(o.id).slice(0,8)}
+` +
+        `🛍️ *Produto:* ${o.prod || '-'}
+` +
+        `🔢 *Quantidade:* ${o.qtd || 1}
+` +
+        `💰 *Valor unitário:* R$ ${fmt(o.val)}
+` +
+        `💵 *Total:* R$ ${fmt(total)}
+` +
+        `📌 *Status:* ${STATUS[o.status]?.l || o.status}
+` +
+        `📝 *Obs do pedido:* ${o.obs || '-'}
+
+` +
+        `📍 *Endereço:* ${address}
+` +
+        `🗺️ *Abrir no Google Maps:* ${maps}
+
+` +
         `✅ Favor confirmar quando a entrega for finalizada.`;
 
-      window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+      window.open(`https://wa.me/${normalized}?text=${encodeURIComponent(msg)}`, '_blank');
+    }
+
+    function resetOrderForm(){
+      editingOrderId = null;
+      const form = document.getElementById('orderForm');
+      if(form) form.reset();
+      calcOrderTotal();
+      fillSelects();
+
+      const title = document.getElementById('orderFormTitle');
+      const btn = document.getElementById('orderSubmitBtn');
+      const cancel = document.getElementById('orderCancelBtn');
+
+      if(title) title.textContent = '➕ Novo Pedido';
+      if(btn){
+        btn.textContent = '📦 Criar Pedido';
+        btn.className = 'btn btn-warning';
+        btn.style.flex = '1';
+        btn.style.justifyContent = 'center';
+      }
+      if(cancel) cancel.style.display = 'none';
+    }
+
+    function cancelOrderEdit(){
+      resetOrderForm();
+      toast('Edição de pedido cancelada.', 'info');
+    }
+
+    function editOrder(id){
+      const o = D.ord.find(x => String(x.id) === String(id));
+      if(!o){
+        toast('Pedido não encontrado.', 'error');
+        return;
+      }
+
+      editingOrderId = o.id;
+      fillSelects();
+      document.getElementById('oCli').value = o.cliId || '';
+      document.getElementById('oProd').value = o.prod || '';
+      document.getElementById('oQtd').value = o.qtd || 1;
+      document.getElementById('oVal').value = Number(o.val || 0).toFixed(2);
+      document.getElementById('oObs').value = o.obs || '';
+      calcOrderTotal();
+
+      const title = document.getElementById('orderFormTitle');
+      const btn = document.getElementById('orderSubmitBtn');
+      const cancel = document.getElementById('orderCancelBtn');
+
+      if(title) title.textContent = '✏️ Editar Pedido';
+      if(btn){
+        btn.textContent = '💾 Salvar Alterações';
+        btn.className = 'btn btn-info';
+        btn.style.flex = '1';
+        btn.style.justifyContent = 'center';
+      }
+      if(cancel) cancel.style.display = 'inline-flex';
+
+      document.getElementById('oProd')?.focus();
+      document.getElementById('s-pedidos')?.scrollIntoView({ behavior:'smooth', block:'start' });
+      toast('Edite os dados e clique em Salvar Alterações.', 'info');
     }
 
     async function addOrder(e){
@@ -1173,25 +1399,35 @@
       }
 
       const payload = {
-        user_id: currentUser.id,
         cliente_id: cliId,
         produto: document.getElementById('oProd').value.trim(),
         quantidade: parseInt(document.getElementById('oQtd').value) || 1,
         valor_unitario: parseFloat(document.getElementById('oVal').value) || 0,
-        observacoes: document.getElementById('oObs').value.trim(),
-        status: 'aguardando'
+        observacoes: document.getElementById('oObs').value.trim()
       };
 
-      const { error } = await SB.from('pedidos').insert(payload);
+      if(editingOrderId){
+        const { error } = await SB.from('pedidos').update(payload).eq('id', editingOrderId);
+        if(error){
+          console.error(error);
+          toast('Erro ao atualizar pedido.', 'error');
+          return;
+        }
+
+        toast('Pedido atualizado!');
+        resetOrderForm();
+        await refreshData();
+        return;
+      }
+
+      const { error } = await SB.from('pedidos').insert({ ...payload, user_id: currentUser.id, status: 'aguardando' });
       if(error){
         console.error(error);
         toast('Erro ao criar pedido.', 'error');
         return;
       }
 
-      e.target.reset();
-      calcOrderTotal();
-      fillSelects();
+      resetOrderForm();
       toast('Pedido criado!');
       await refreshData();
     }
@@ -1215,6 +1451,7 @@
           toast('Erro ao remover pedido.', 'error');
           return;
         }
+        if(String(editingOrderId) === String(id)) resetOrderForm();
         toast('Pedido removido', 'info');
         await refreshData();
       }
@@ -1250,6 +1487,7 @@
           <td style="font-size:12px;color:var(--text-muted)">${esc(o.d)}</td>
           <td>${esc(o.obs || '-')}</td>
           <td style="display:flex;gap:6px;flex-wrap:wrap">
+            <button class="btn btn-sm btn-info" onclick="editOrder('${idAttr(o.id)}')">✏️ Editar</button>
             <button class="btn btn-sm btn-success" onclick="deliveryWhatsApp('${idAttr(o.id)}')">🚚 Entrega</button>
             <button class="btn btn-sm btn-danger" onclick="delOrder('${idAttr(o.id)}')">🗑️</button>
           </td>
@@ -1574,6 +1812,7 @@
       applyChartFilter();
       calcOrderTotal();
       calcShopee();
+      loadDeliveryPhone();
       await checkSession();
     };
   </script>
