@@ -100,7 +100,7 @@
     }
     .login-cred strong{color:var(--primary-light)}
 
-    #mainApp{display:none;position:relative;z-index:1}
+    #mainApp{display:none;position:relative;z-index:1;min-height:100vh;padding-left:230px}
 
     .header{
       background:var(--bg-card);
@@ -128,16 +128,29 @@
     }
 
     .nav-tabs{
-      display:flex;gap:4px;padding:8px 28px;
-      background:var(--bg-card);border-bottom:1px solid var(--border);overflow-x:auto;
+      position:fixed;left:0;top:0;bottom:0;width:230px;z-index:220;
+      display:flex;flex-direction:column;gap:8px;padding:20px 14px;
+      background:rgba(30,41,59,.98);border-right:1px solid var(--border);
+      overflow-y:auto;box-shadow:10px 0 30px rgba(0,0,0,.25);
+    }
+    .nav-tabs::before{
+      content:'Menu';
+      display:block;
+      color:var(--text-muted);
+      font-size:11px;
+      font-weight:800;
+      text-transform:uppercase;
+      letter-spacing:.9px;
+      margin:4px 10px 6px;
     }
     .nav-tab{
-      padding:10px 16px;border:none;background:transparent;color:var(--text-muted);
-      font-size:13px;font-weight:500;font-family:'Inter',sans-serif;cursor:pointer;
-      border-radius:8px;transition:.2s;white-space:nowrap;
+      width:100%;padding:12px 14px;border:none;background:transparent;color:var(--text-muted);
+      font-size:13px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;
+      border-radius:10px;transition:.2s;white-space:nowrap;text-align:left;
+      display:flex;align-items:center;gap:8px;
     }
     .nav-tab:hover{background:var(--bg);color:var(--text)}
-    .nav-tab.active{background:var(--primary);color:#fff}
+    .nav-tab.active{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;box-shadow:0 8px 20px rgba(79,70,229,.22)}
 
     .content{padding:24px;max-width:1400px;margin:0 auto}
     .section{display:none;animation:fadeIn .3s ease}
@@ -626,11 +639,29 @@
     .delivery-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
     .delivery-actions .btn{flex:1;justify-content:center}
 
+
+    .finance-toolbar{
+      display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:flex-end;
+    }
+    .finance-toggle{
+      display:inline-flex;align-items:center;gap:6px;
+      padding:8px 10px;background:var(--bg-input);border:1px solid var(--border);
+      border-radius:999px;font-size:12px;color:var(--text-muted);cursor:pointer;
+      user-select:none;
+    }
+    .finance-toggle input{accent-color:var(--primary);cursor:pointer}
+    .finance-toggle span{white-space:nowrap}
+
     @media (max-width:700px){
+      #mainApp{padding-left:0;padding-bottom:74px}
+      .nav-tabs{top:auto;bottom:0;left:0;right:0;width:auto;height:auto;flex-direction:row;padding:8px 10px;border-right:none;border-top:1px solid var(--border);overflow-x:auto;box-shadow:0 -10px 30px rgba(0,0,0,.25)}
+      .nav-tabs::before{display:none}
+      .nav-tab{width:auto;min-width:max-content;padding:10px 12px;text-align:center;justify-content:center}
       .form-row,.calc-grid,.calc-input-row,.shopee-details{grid-template-columns:1fr}
-      .header,.content,.nav-tabs{padding:10px 12px}
+      .header,.content{padding:10px 12px}
+      .header{position:sticky;top:0}
       .search-box{width:100%}
-      .chart-filters{width:100%}
+      .chart-filters,.finance-toolbar{width:100%;justify-content:flex-start}
     }
   </style>
 </head>
@@ -712,11 +743,12 @@
     </header>
 
     <nav class="nav-tabs">
-      <button class="nav-tab active" onclick="nav('dashboard', this)">📊 Dashboard</button>
-      <button class="nav-tab" onclick="nav('clientes', this)">👥 Clientes</button>
-      <button class="nav-tab" onclick="nav('pedidos', this)">📦 Pedidos</button>
-      <button class="nav-tab" onclick="nav('custos', this)">🧮 Calculadora 3D</button>
-      <button class="nav-tab" onclick="nav('vendas', this)">🛍️ Precificação Shopee</button>
+      <button class="nav-tab active" data-tab="dashboard" onclick="nav('dashboard', this)">📊 Dashboard</button>
+      <button class="nav-tab" data-tab="clientes" onclick="nav('clientes', this)">👥 Clientes</button>
+      <button class="nav-tab" data-tab="pedidos" onclick="nav('pedidos', this)">📦 Pedidos</button>
+      <button class="nav-tab" data-tab="financas" onclick="nav('financas', this)">💰 Finanças</button>
+      <button class="nav-tab" data-tab="custos" onclick="nav('custos', this)">🧮 Calculadora 3D</button>
+      <button class="nav-tab" data-tab="vendas" onclick="nav('vendas', this)">🛍️ Precificação Shopee</button>
     </nav>
 
     <div class="content">
@@ -732,18 +764,57 @@
           <div class="stat-box"><div class="stat-val" id="stRec" style="color:var(--primary-light)">R$ 0,00</div><div class="stat-lbl">Receita</div></div>
         </div>
 
+        <div class="dashboard-grid">
+          <div class="dash-card" onclick="nav('clientes')">
+            <h3>👥 Clientes</h3>
+            <p>Cadastro simplificado e organizado em linha.</p>
+            <div class="count" id="dCli">0</div>
+          </div>
+          <div class="dash-card" onclick="nav('pedidos')">
+            <h3>📦 Pedidos</h3>
+            <p>Lista com status editável e atualização automática.</p>
+            <div class="count" id="dPed">0</div>
+          </div>
+          <div class="dash-card" onclick="nav('custos')">
+            <h3>🧮 Calc 3D</h3>
+            <p>Cálculo para impressão 3D com tempo, material e custos.</p>
+          </div>
+          <div class="dash-card" onclick="nav('financas')">
+            <h3>💰 Finanças</h3>
+            <p>Entradas, saídas, saldo, valores a receber e gráfico completo.</p>
+          </div>
+          <div class="dash-card" onclick="nav('vendas')">
+            <h3>🛍️ Precificação Shopee</h3>
+            <p>Comissão, margem, ROI e faixa ativa de cobrança.</p>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="section" id="s-financas">
+        <h2 class="section-title">💰 Finanças</h2>
+        <p class="section-subtitle">Entradas, saídas, saldo, valores a receber e filtros por período</p>
+
         <div class="cashflow-card">
           <div class="cashflow-top">
             <div>
               <h3>💰 Fluxo de Caixa</h3>
-              <p>O valor entra aqui quando o pedido é marcado como concluído.</p>
+              <p>Entradas vêm dos pedidos concluídos; saídas vêm dos lançamentos do fluxo de caixa; a receber vem dos pedidos ainda não concluídos.</p>
             </div>
-            <button class="btn btn-sm btn-outline" onclick="nav('pedidos', document.querySelectorAll('.nav-tab')[2])">Ver pedidos</button>
+            <button class="btn btn-sm btn-outline" onclick="nav('pedidos')">Ver pedidos</button>
           </div>
           <div class="cashflow-grid">
             <div class="cashflow-mini">
-              <div class="lbl">Caixa confirmado</div>
-              <div class="val" id="cashConfirmed" style="color:var(--success)">R$ 0,00</div>
+              <div class="lbl">Entradas</div>
+              <div class="val" id="cashEntries" style="color:var(--success)">R$ 0,00</div>
+            </div>
+            <div class="cashflow-mini">
+              <div class="lbl">Saídas</div>
+              <div class="val" id="cashOut" style="color:var(--danger)">R$ 0,00</div>
+            </div>
+            <div class="cashflow-mini">
+              <div class="lbl">Saldo confirmado</div>
+              <div class="val" id="cashConfirmed" style="color:var(--primary-light)">R$ 0,00</div>
             </div>
             <div class="cashflow-mini">
               <div class="lbl">A receber</div>
@@ -751,7 +822,7 @@
             </div>
             <div class="cashflow-mini">
               <div class="lbl">Pedidos concluídos</div>
-              <div class="val" id="cashCompletedCount" style="color:var(--primary-light)">0</div>
+              <div class="val" id="cashCompletedCount" style="color:var(--success)">0</div>
             </div>
             <div class="cashflow-mini">
               <div class="lbl">Total em pedidos</div>
@@ -760,45 +831,48 @@
           </div>
         </div>
 
-        <div class="dashboard-grid">
-          <div class="dash-card" onclick="nav('clientes', document.querySelectorAll('.nav-tab')[1])">
-            <h3>👥 Clientes</h3>
-            <p>Cadastro simplificado e organizado em linha.</p>
-            <div class="count" id="dCli">0</div>
-          </div>
-          <div class="dash-card" onclick="nav('pedidos', document.querySelectorAll('.nav-tab')[2])">
-            <h3>📦 Pedidos</h3>
-            <p>Lista com status editável e atualização automática.</p>
-            <div class="count" id="dPed">0</div>
-          </div>
-          <div class="dash-card" onclick="nav('custos', document.querySelectorAll('.nav-tab')[3])">
-            <h3>🧮 Calc 3D</h3>
-            <p>Cálculo para impressão 3D com tempo, material e custos.</p>
-          </div>
-          <div class="dash-card" onclick="nav('vendas', document.querySelectorAll('.nav-tab')[4])">
-            <h3>🛍️ Precificação Shopee</h3>
-            <p>Comissão, margem, ROI e faixa ativa de cobrança.</p>
-          </div>
-        </div>
-
         <div class="chart-card">
           <div class="chart-top">
             <div>
-              <h3 style="font-size:16px;margin-bottom:4px">📈 Financeiro</h3>
-              <p style="font-size:12px;color:var(--text-muted)">Receita por pedidos concluídos</p>
+              <h3 style="font-size:16px;margin-bottom:4px">📈 Gráfico Financeiro</h3>
+              <p style="font-size:12px;color:var(--text-muted)">Ligue ou desligue os itens que quer visualizar.</p>
             </div>
             <div class="chart-filters">
               <select id="chartFilter" class="mini-select" onchange="applyChartFilter()">
                 <option value="dia">Dia</option>
                 <option value="semana">Semana</option>
                 <option value="mes" selected>Mês</option>
+                <option value="ano">Ano</option>
+                <option value="todos">Todos</option>
                 <option value="personalizado">Personalizado</option>
               </select>
               <input type="date" id="chartStart" class="mini-input" onchange="applyChartFilter()">
               <input type="date" id="chartEnd" class="mini-input" onchange="applyChartFilter()">
             </div>
           </div>
-          <canvas id="financeChart" height="90"></canvas>
+          <div class="finance-toolbar" style="margin-bottom:14px">
+            <label class="finance-toggle"><input type="checkbox" id="showEntradas" checked onchange="applyChartFilter()"><span>Entradas</span></label>
+            <label class="finance-toggle"><input type="checkbox" id="showSaidas" checked onchange="applyChartFilter()"><span>Saídas</span></label>
+            <label class="finance-toggle"><input type="checkbox" id="showReceber" checked onchange="applyChartFilter()"><span>A receber</span></label>
+            <label class="finance-toggle"><input type="checkbox" id="showSaldo" checked onchange="applyChartFilter()"><span>Saldo</span></label>
+            <label class="finance-toggle"><input type="checkbox" id="showPedidos" onchange="applyChartFilter()"><span>Total em pedidos</span></label>
+          </div>
+          <canvas id="financeChart" height="95"></canvas>
+        </div>
+
+        <div class="table-container">
+          <div class="table-header">
+            <h3>📋 Dados financeiros do período</h3>
+            <button class="btn btn-sm btn-outline" onclick="applyChartFilter()">Atualizar</button>
+          </div>
+          <div style="overflow-x:auto">
+            <table>
+              <thead>
+                <tr><th>Data</th><th>Tipo</th><th>Descrição</th><th>Valor</th><th>Status</th></tr>
+              </thead>
+              <tbody id="financeRows"></tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -949,7 +1023,7 @@
       </div>
 
       <div class="section" id="s-custos">
-        <h2 class="section-title">🧮 Calculadora de Preço - 3DGIGA</h2>
+        <h2 class="section-title">🧮 Calculadora de Preço - StudioGiga</h2>
         <p class="section-subtitle">Cálculo preciso para impressão 3D</p>
 
         <div class="calc-grid">
@@ -1019,9 +1093,15 @@
               </div>
               <div class="form-row">
                 <div class="form-group"><label>Quantidade de Peças</label><input type="number" id="3dQtdPecas" min="1" value="1"></div>
-                <div class="form-group"><label>Prazo estimado para entrega</label><input type="text" id="3dPrazo" placeholder="Ex: 3 dias úteis"></div>
+                <div class="form-group"><label>Prazo estimado para entrega (dias)</label><input type="text" id="3dPrazo" placeholder="Ex: 3"></div>
+                <div class="form-group"><label>Valor unitário final manual (R$)</label><input type="number" id="3dValorManual" min="0" step="0.01" placeholder="Opcional: ex. 50,00" oninput="calc3D()"></div>
               </div>
-              <p style="font-size:11px;color:var(--text-muted);line-height:1.5;margin-top:-4px">O valor unitário agora é sempre automático, calculado pelos custos informados. Ao salvar o orçamento vinculado, o pedido recebe esse valor calculado.</p>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:-4px;margin-bottom:8px">
+                <button type="button" class="btn btn-sm btn-outline" onclick="applyRoundedBudgetValue('ceil')">🔼 Arredondar para cima</button>
+                <button type="button" class="btn btn-sm btn-outline" onclick="applyRoundedBudgetValue('nearest')">⚖️ Arredondar mais próximo</button>
+                <button type="button" class="btn btn-sm btn-outline" onclick="clearBudgetManualValue()">↩️ Usar calculado</button>
+              </div>
+              <p style="font-size:11px;color:var(--text-muted);line-height:1.5;margin-top:-4px">O valor unitário é calculado pelos custos, mas você pode arredondar manualmente antes de copiar ou enviar para o cliente. Ao salvar o orçamento vinculado, o pedido recebe o valor final usado.</p>
             </div>
 
             <button class="calc-btn" onclick="calc3D()">🧮 Calcular Preço Final</button>
@@ -1774,9 +1854,11 @@
     function nav(tab, btn){
       document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
       document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-      document.getElementById('s-' + tab).classList.add('active');
-      if(btn) btn.classList.add('active');
-      if(tab === 'dashboard') applyChartFilter();
+      const section = document.getElementById('s-' + tab);
+      if(section) section.classList.add('active');
+      const targetBtn = btn || document.querySelector(`.nav-tab[data-tab="${tab}"]`);
+      if(targetBtn) targetBtn.classList.add('active');
+      if(tab === 'dashboard' || tab === 'financas') applyChartFilter();
       if(tab === 'vendas') calcShopee();
       updateAll();
       setTimeout(refreshTabNavigation, 0);
@@ -2182,7 +2264,7 @@
     }
 
     function openBudgetForOrder(orderId){
-      nav('custos', document.querySelectorAll('.nav-tab')[3]);
+      nav('custos');
       setTimeout(() => {
         const select = document.getElementById('3dPedido');
         if(select){
@@ -2229,7 +2311,7 @@
     }
 
     function get3DLastInputIds(){
-      return ['3dHoras','3dMin','3dTipoMaterial','3dMat','3dPrecoKg','3dEnergia','3dDesgaste','3dPos','3dEmb','3dFrete','3dImp','3dLucro','3dQtdPecas','3dPrazo'];
+      return ['3dHoras','3dMin','3dTipoMaterial','3dMat','3dPrecoKg','3dEnergia','3dDesgaste','3dPos','3dEmb','3dFrete','3dImp','3dLucro','3dQtdPecas','3dPrazo','3dValorManual'];
     }
 
     function get3DInputsSnapshot(){
@@ -2275,7 +2357,7 @@
     }
 
     function clearBudgetForm(){
-      ['3dHoras','3dMin','3dMat','3dPrecoKg','3dEnergia','3dDesgaste','3dPos','3dEmb','3dFrete','3dImp','3dLucro'].forEach(id => {
+      ['3dHoras','3dMin','3dMat','3dPrecoKg','3dEnergia','3dDesgaste','3dPos','3dEmb','3dFrete','3dImp','3dLucro','3dValorManual'].forEach(id => {
         const el = document.getElementById(id);
         if(el) el.value = '0';
       });
@@ -2380,7 +2462,8 @@
       set('3dImp', budget.impostos_percentual || 0);
       set('3dLucro', budget.lucro_percentual || 0);
       set('3dQtdPecas', budget.quantidade || 1);
-      set('3dPrazo', budget.prazo_estimado || '');
+      set('3dPrazo', String(budget.prazo_estimado || '').replace(/\s*dias?\s*$/i, ''));
+      set('3dValorManual', budget.valor_unitario || '');
 
       const badge = document.getElementById('budgetEditingBadge');
       if(badge) badge.classList.add('show');
@@ -2840,99 +2923,185 @@
       `).join('');
     }
 
-    function groupOrdersByFilter(filter, startDate, endDate){
-      let entries = D.cash.filter(c => c.tipo === 'entrada');
+    function getDateRange(filter, startDate, endDate){
       const now = new Date();
+      const startOfDay = d => { const x = new Date(d); x.setHours(0,0,0,0); return x; };
+      const endOfDay = d => { const x = new Date(d); x.setHours(23,59,59,999); return x; };
 
-      const entryDate = c => {
-        const dt = new Date(c.data_lancamento || c.created_at || '');
-        return Number.isNaN(dt.getTime()) ? null : dt;
-      };
-
-      if(filter === 'dia'){
-        entries = entries.filter(c => {
-          const dt = entryDate(c);
-          return dt && dt.toDateString() === now.toDateString();
-        });
-      } else if(filter === 'semana'){
-        const start = new Date(now);
-        start.setHours(0,0,0,0);
+      if(filter === 'dia') return { start:startOfDay(now), end:endOfDay(now) };
+      if(filter === 'semana'){
+        const start = startOfDay(now);
         start.setDate(now.getDate() - 6);
-        entries = entries.filter(c => {
-          const dt = entryDate(c);
-          return dt && dt >= start && dt <= now;
-        });
-      } else if(filter === 'mes'){
-        entries = entries.filter(c => {
-          const dt = entryDate(c);
-          return dt && dt.getMonth() === now.getMonth() && dt.getFullYear() === now.getFullYear();
-        });
-      } else if(filter === 'personalizado'){
-        const start = startDate ? new Date(startDate + 'T00:00:00') : null;
-        const end = endDate ? new Date(endDate + 'T23:59:59') : null;
-        entries = entries.filter(c => {
-          const dt = entryDate(c);
-          if(!dt) return false;
-          if(start && dt < start) return false;
-          if(end && dt > end) return false;
-          return true;
-        });
+        return { start, end:endOfDay(now) };
       }
+      if(filter === 'mes') return { start:new Date(now.getFullYear(), now.getMonth(), 1), end:endOfDay(now) };
+      if(filter === 'ano') return { start:new Date(now.getFullYear(), 0, 1), end:endOfDay(now) };
+      if(filter === 'personalizado'){
+        return {
+          start: startDate ? new Date(startDate + 'T00:00:00') : null,
+          end: endDate ? new Date(endDate + 'T23:59:59') : null
+        };
+      }
+      return { start:null, end:null };
+    }
 
-      const map = {};
-      entries.forEach(c => {
-        const dt = entryDate(c);
-        if(!dt) return;
-        const key = dt.toLocaleDateString('pt-BR');
-        map[key] = (map[key] || 0) + Number(c.valor || 0);
+    function validDate(dt){
+      return dt instanceof Date && !Number.isNaN(dt.getTime());
+    }
+
+    function inRange(dt, range){
+      if(!validDate(dt)) return false;
+      if(range?.start && dt < range.start) return false;
+      if(range?.end && dt > range.end) return false;
+      return true;
+    }
+
+    function cashDate(c){
+      const dt = new Date(c.data_lancamento || c.created_at || '');
+      return validDate(dt) ? dt : new Date();
+    }
+
+    function orderDateForFinance(o){
+      return parseBRDate(o.d) || new Date();
+    }
+
+    function addFinanceValue(map, dt, value){
+      if(!validDate(dt)) return;
+      const key = formatDateInput(dt);
+      map[key] = (map[key] || 0) + Number(value || 0);
+    }
+
+    function financeLabelFromKey(key){
+      const [y,m,d] = key.split('-');
+      return `${d}/${m}/${y}`;
+    }
+
+    function checkboxOn(id, fallback=true){
+      const el = document.getElementById(id);
+      return el ? el.checked : fallback;
+    }
+
+    function getFinanceData(filter, startDate, endDate){
+      const range = getDateRange(filter, startDate, endDate);
+      const maps = { entradas:{}, saidas:{}, receber:{}, pedidos:{}, saldo:{} };
+      const rows = [];
+
+      D.cash.forEach(c => {
+        const dt = cashDate(c);
+        if(!inRange(dt, range)) return;
+        const value = Number(c.valor || 0);
+        const tipo = c.tipo === 'saida' ? 'saida' : 'entrada';
+        addFinanceValue(maps[tipo === 'saida' ? 'saidas' : 'entradas'], dt, value);
+        rows.push({
+          dt,
+          tipo: tipo === 'saida' ? 'Saída' : 'Entrada',
+          desc: c.descricao || c.categoria || 'Lançamento financeiro',
+          valor: tipo === 'saida' ? -Math.abs(value) : value,
+          status: 'Confirmado'
+        });
       });
 
-      const labels = Object.keys(map);
-      const values = Object.values(map);
+      D.ord.forEach(o => {
+        const dt = orderDateForFinance(o);
+        if(!inRange(dt, range)) return;
+        const total = orderTotal(o);
+        addFinanceValue(maps.pedidos, dt, total);
+        if(o.status !== 'concluido'){
+          addFinanceValue(maps.receber, dt, total);
+          rows.push({
+            dt,
+            tipo: 'A receber',
+            desc: `Pedido #${String(o.id).slice(0,8)} - ${getClientName(o.cliId)} - ${o.prod || 'Pedido'}`,
+            valor: total,
+            status: STATUS[o.status]?.l || o.status || 'Em aberto'
+          });
+        }
+      });
 
-      return { labels, values };
+      const keys = Array.from(new Set([
+        ...Object.keys(maps.entradas),
+        ...Object.keys(maps.saidas),
+        ...Object.keys(maps.receber),
+        ...Object.keys(maps.pedidos)
+      ])).sort();
+
+      keys.forEach(key => {
+        maps.saldo[key] = Number(maps.entradas[key] || 0) - Number(maps.saidas[key] || 0);
+      });
+
+      rows.sort((a,b) => b.dt - a.dt);
+      return { keys, labels:keys.map(financeLabelFromKey), maps, rows };
+    }
+
+    function renderFinanceRows(filter, startDate, endDate){
+      const tb = document.getElementById('financeRows');
+      if(!tb) return;
+      const { rows } = getFinanceData(filter, startDate, endDate);
+      if(!rows.length){
+        tb.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-muted)">Nenhum dado financeiro no período selecionado.</td></tr>`;
+        return;
+      }
+      tb.innerHTML = rows.map(r => `
+        <tr>
+          <td>${esc(r.dt.toLocaleDateString('pt-BR'))}</td>
+          <td><strong>${esc(r.tipo)}</strong></td>
+          <td>${esc(r.desc)}</td>
+          <td style="font-weight:800;color:${r.valor < 0 ? 'var(--danger)' : 'var(--success)'}">${r.valor < 0 ? '-' : ''}R$ ${fmt(Math.abs(r.valor))}</td>
+          <td>${esc(r.status)}</td>
+        </tr>
+      `).join('');
     }
 
     function renderFinanceChart(){
-      const filter = document.getElementById('chartFilter').value;
-      const start = document.getElementById('chartStart').value;
-      const end = document.getElementById('chartEnd').value;
-      const { labels, values } = groupOrdersByFilter(filter, start, end);
-      const ctx = document.getElementById('financeChart').getContext('2d');
+      const canvas = document.getElementById('financeChart');
+      if(!canvas || !window.Chart) return;
+      const filter = document.getElementById('chartFilter')?.value || 'mes';
+      const start = document.getElementById('chartStart')?.value || '';
+      const end = document.getElementById('chartEnd')?.value || '';
+      const { labels, maps, keys } = getFinanceData(filter, start, end);
+      const ctx = canvas.getContext('2d');
 
       if(financeChart) financeChart.destroy();
 
+      const labelsSafe = labels.length ? labels : ['Sem dados'];
+      const valuesFor = key => keys.length ? keys.map(k => maps[key][k] || 0) : [0];
+      const datasets = [];
+
+      if(checkboxOn('showEntradas')) datasets.push({ label:'Entradas (R$)', data:valuesFor('entradas'), borderColor:'#22c55e', backgroundColor:'rgba(34,197,94,.12)', borderWidth:3, fill:false, tension:.35, pointRadius:4 });
+      if(checkboxOn('showSaidas')) datasets.push({ label:'Saídas (R$)', data:valuesFor('saidas').map(v => -Math.abs(v)), borderColor:'#ef4444', backgroundColor:'rgba(239,68,68,.12)', borderWidth:3, fill:false, tension:.35, pointRadius:4 });
+      if(checkboxOn('showReceber')) datasets.push({ label:'A receber (R$)', data:valuesFor('receber'), borderColor:'#f59e0b', backgroundColor:'rgba(245,158,11,.12)', borderWidth:3, fill:false, tension:.35, pointRadius:4 });
+      if(checkboxOn('showSaldo')) datasets.push({ label:'Saldo (R$)', data:valuesFor('saldo'), borderColor:'#818cf8', backgroundColor:'rgba(129,140,248,.12)', borderWidth:3, fill:false, tension:.35, pointRadius:4 });
+      if(checkboxOn('showPedidos', false)) datasets.push({ label:'Total em pedidos (R$)', data:valuesFor('pedidos'), borderColor:'#3b82f6', backgroundColor:'rgba(59,130,246,.12)', borderWidth:3, fill:false, tension:.35, pointRadius:4 });
+
+      if(!datasets.length){
+        datasets.push({ label:'Nenhum item selecionado', data:[0], borderColor:'#94a3b8', backgroundColor:'rgba(148,163,184,.12)', borderWidth:2, fill:false });
+      }
+
       financeChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: labels.length ? labels : ['Sem dados'],
-          datasets: [{
-            label: 'Receita (R$)',
-            data: values.length ? values : [0],
-            borderColor: '#818cf8',
-            backgroundColor: 'rgba(129,140,248,.18)',
-            borderWidth: 3,
-            fill: true,
-            tension: .35,
-            pointRadius: 4,
-            pointBackgroundColor: '#fff'
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: { legend: { labels: { color: '#f8fafc' } } },
-          scales: {
-            x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(148,163,184,.1)' } },
-            y: { ticks: { color: '#94a3b8', callback: value => 'R$ ' + fmt(value) }, grid: { color: 'rgba(148,163,184,.1)' } }
+        type:'line',
+        data:{ labels:labelsSafe, datasets },
+        options:{
+          responsive:true,
+          interaction:{ mode:'index', intersect:false },
+          plugins:{
+            legend:{ labels:{ color:'#f8fafc' } },
+            tooltip:{ callbacks:{ label: item => `${item.dataset.label}: R$ ${fmt(item.raw)}` } }
+          },
+          scales:{
+            x:{ ticks:{ color:'#94a3b8' }, grid:{ color:'rgba(148,163,184,.10)' } },
+            y:{ ticks:{ color:'#94a3b8', callback:value => 'R$ ' + fmt(value) }, grid:{ color:'rgba(148,163,184,.10)' } }
           }
         }
       });
+      renderFinanceRows(filter, start, end);
     }
 
     function applyChartFilter(){
-      const filter = document.getElementById('chartFilter').value;
+      const filterEl = document.getElementById('chartFilter');
       const start = document.getElementById('chartStart');
       const end = document.getElementById('chartEnd');
+      if(!filterEl || !start || !end){ renderFinanceChart(); return; }
+      const filter = filterEl.value;
       const today = new Date();
 
       if(filter === 'personalizado'){
@@ -2940,11 +3109,36 @@
         end.disabled = false;
         if(!start.value) start.value = formatDateInput(new Date(today.getFullYear(), today.getMonth(), 1));
         if(!end.value) end.value = formatDateInput(today);
-      } else {
+      }else{
         start.disabled = true;
         end.disabled = true;
       }
       renderFinanceChart();
+    }
+
+    function normalizePrazoDias(raw){
+      const txt = String(raw || '').trim();
+      if(!txt) return 'A combinar';
+      if(/\bdias?\b/i.test(txt)) return txt;
+      return `${txt} dias`;
+    }
+
+    function applyRoundedBudgetValue(mode='ceil'){
+      if(!last3DBudget) calc3D();
+      const value = Number(last3DBudget?.valor_calculado || last3DBudget?.valor_unitario || 0);
+      if(!value){ toast('Calcule o orçamento primeiro.', 'error'); return; }
+      const rounded = mode === 'nearest' ? Math.round(value) : Math.ceil(value);
+      const el = document.getElementById('3dValorManual');
+      if(el) el.value = rounded.toFixed(2);
+      calc3D();
+      toast('Valor final manual aplicado.', 'info');
+    }
+
+    function clearBudgetManualValue(){
+      const el = document.getElementById('3dValorManual');
+      if(el) el.value = '';
+      calc3D();
+      toast('Usando valor calculado novamente.', 'info');
     }
 
     function calc3D(){
@@ -2968,7 +3162,8 @@
       const lucro = Number(document.getElementById('3dLucro').value || 0);
       const tipoMaterial = document.getElementById('3dTipoMaterial').value || 'Material a definir';
       const qtdPecas = Math.max(1, Number(document.getElementById('3dQtdPecas').value || 1));
-      const prazo = document.getElementById('3dPrazo').value.trim() || 'A combinar';
+      const prazo = normalizePrazoDias(document.getElementById('3dPrazo').value);
+      const manualUnit = Number(document.getElementById('3dValorManual')?.value || 0);
       const { order: budgetOrder, client: budgetClient } = getBudgetOrderContext();
 
       const cM = mat * pKg / 1000;
@@ -2976,10 +3171,13 @@
       const cD = tH * dsg;
       const base = cM + cE + cD + pos + emb + frete;
       const vImp = base * imp / 100;
-      const vLuc = (base + vImp) * lucro / 100;
-      const unit = base + vImp + vLuc;
+      const vLucCalculado = (base + vImp) * lucro / 100;
+      const unitCalculado = base + vImp + vLucCalculado;
+      const unit = manualUnit > 0 ? manualUnit : unitCalculado;
       const totalServico = unit * qtdPecas;
-      const margemPercentual = unit > 0 ? (vLuc / unit) * 100 : 0;
+      const vLucFinal = unit - base - vImp;
+      const margemPercentual = unit > 0 ? (vLucFinal / unit) * 100 : 0;
+      const usandoManual = manualUnit > 0;
 
       saveLast3DInputs();
 
@@ -2996,11 +3194,13 @@
 
 ` : '';
 
-      last3DQuote = cleanWhatsAppMessage(`*ORÇAMENTO - 3DGIGA*
+      last3DQuote = cleanWhatsAppMessage(`*Orçamento StudioGiga*
 
 ` +
         pedidoInfo +
         `*Material:* ${tipoMaterial}
+` +
+        `*Quantidade de material:* ${fmt(mat)} g
 ` +
         `*Tempo de impressão:* ${h}h ${String(m).padStart(2,'0')}min
 ` +
@@ -3037,11 +3237,12 @@
         lucro_percentual: lucro,
         prazo_estimado: prazo,
         quantidade: qtdPecas,
+        valor_calculado: Number(unitCalculado.toFixed(2)),
         valor_unitario: Number(unit.toFixed(2)),
         valor_total: Number(totalServico.toFixed(2)),
         custo_base: Number(base.toFixed(2)),
         valor_impostos: Number(vImp.toFixed(2)),
-        valor_lucro: Number(vLuc.toFixed(2)),
+        valor_lucro: Number(vLucFinal.toFixed(2)),
         margem_percentual: Number(margemPercentual.toFixed(2)),
         message: last3DQuote,
         updated_at: new Date().toISOString()
@@ -3054,8 +3255,12 @@
           <h4>📋 Resultado da Precificação</h4>
           <div class="pricing-summary-grid">
             <div class="pricing-total-card">
-              <div class="lbl">Valor unitário calculado</div>
+              <div class="lbl">Valor unitário usado no orçamento</div>
               <div class="val">R$ ${fmt(unit)}</div>
+            </div>
+            <div class="pricing-mini-card">
+              <div class="lbl">Valor calculado</div>
+              <div class="val">R$ ${fmt(unitCalculado)}</div>
             </div>
             <div class="pricing-mini-card">
               <div class="lbl">Total do orçamento</div>
@@ -3068,7 +3273,7 @@
           </div>
 
           <div class="pricing-lines">
-            <div class="pricing-line"><span>Material</span><strong>R$ ${fmt(cM)}</strong></div>
+            <div class="pricing-line"><span>Material (${fmt(mat)} g)</span><strong>R$ ${fmt(cM)}</strong></div>
             <div class="pricing-line"><span>Energia</span><strong>R$ ${fmt(cE)}</strong></div>
             <div class="pricing-line"><span>Desgaste</span><strong>R$ ${fmt(cD)}</strong></div>
             <div class="pricing-line"><span>Pós-processamento</span><strong>R$ ${fmt(pos)}</strong></div>
@@ -3076,12 +3281,13 @@
             <div class="pricing-line"><span>Frete</span><strong>R$ ${fmt(frete)}</strong></div>
             <div class="pricing-line highlight"><span>Custo base</span><strong>R$ ${fmt(base)}</strong></div>
             <div class="pricing-line"><span>Impostos (${fmt(imp)}%)</span><strong>R$ ${fmt(vImp)}</strong></div>
-            <div class="pricing-line profit"><span>Lucro (${fmt(lucro)}%)</span><strong>R$ ${fmt(vLuc)}</strong></div>
+            <div class="pricing-line profit"><span>Lucro final</span><strong>R$ ${fmt(vLucFinal)}</strong></div>
             <div class="pricing-line"><span>Margem sobre venda</span><strong>${margemPercentual.toFixed(1)}%</strong></div>
           </div>
 
           <div class="pricing-note">
-            Tempo: ${h}h ${String(m).padStart(2,'0')}min • Material: ${esc(tipoMaterial)} • Valor automático calculado pelos custos.
+            Tempo: ${h}h ${String(m).padStart(2,'0')}min • Material: ${esc(tipoMaterial)} • Peso: ${fmt(mat)} g • Prazo: ${esc(prazo)}.
+            ${usandoManual ? 'Valor final manual aplicado antes do envio ao cliente.' : 'Valor automático calculado pelos custos.'}
           </div>
           ${budgetOrder ? `<div class="budget-sync-note">Pedido vinculado: clique em <strong>Salvar e atualizar pedido</strong> para gravar o orçamento e atualizar o pedido #${esc(String(budgetOrder.id).slice(0,8))} com ${qtdPecas} peça(s), valor unitário R$ ${fmt(unit)} e total R$ ${fmt(totalServico)}.</div>` : ''}
         </div>
@@ -3256,10 +3462,14 @@
       document.getElementById('stConc').textContent = co;
       document.getElementById('stRec').textContent = `R$ ${fmt(r)}`;
 
+      const cashEntries = document.getElementById('cashEntries');
+      const cashOutEl = document.getElementById('cashOut');
       const cashConfirmed = document.getElementById('cashConfirmed');
       const cashPending = document.getElementById('cashPending');
       const cashCompletedCount = document.getElementById('cashCompletedCount');
       const cashTotalOrders = document.getElementById('cashTotalOrders');
+      if(cashEntries) cashEntries.textContent = `R$ ${fmt(cashIn)}`;
+      if(cashOutEl) cashOutEl.textContent = `R$ ${fmt(cashOut)}`;
       if(cashConfirmed) cashConfirmed.textContent = `R$ ${fmt(r)}`;
       if(cashPending) cashPending.textContent = `R$ ${fmt(pendingCash)}`;
       if(cashCompletedCount) cashCompletedCount.textContent = co;
@@ -3304,5 +3514,7 @@
       refreshTabNavigation();
     };
   </script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"7939e04a4baf43c8b86a560f74aac60e","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"39e87a2afe7c46788f2fe28e3346cf27","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>
