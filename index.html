@@ -928,6 +928,129 @@
       .order-filters .search-box{width:220px;min-width:220px}
       .table-scroll-note{padding:8px 12px 0}
     }
+
+
+    /* === AJUSTES SOLICITADOS: DASHBOARD PREMIUM, CORES VIVAS E FECHAMENTO === */
+    .dashboard-premium{
+      display:grid;
+      grid-template-columns:minmax(0,1.25fr) minmax(280px,.75fr);
+      gap:16px;
+      align-items:start;
+    }
+    .dashboard-metrics{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(170px,1fr));
+      gap:12px;
+    }
+    .metric-card{
+      position:relative;
+      overflow:hidden;
+      background:linear-gradient(135deg,rgba(30,41,59,.98),rgba(15,23,42,.96));
+      border:1px solid rgba(129,140,248,.20);
+      border-radius:16px;
+      padding:16px;
+      min-height:118px;
+      box-shadow:0 18px 45px rgba(0,0,0,.20);
+    }
+    .metric-card::after{
+      content:'';
+      position:absolute;
+      right:-30px;
+      top:-30px;
+      width:90px;
+      height:90px;
+      border-radius:999px;
+      background:rgba(129,140,248,.10);
+    }
+    .metric-card .metric-ico{font-size:22px;margin-bottom:10px}
+    .metric-card .metric-lbl{
+      font-size:10px;
+      color:var(--text-muted);
+      text-transform:uppercase;
+      letter-spacing:.75px;
+      font-weight:800;
+      margin-bottom:4px;
+    }
+    .metric-card .metric-val{font-size:25px;font-weight:900;line-height:1.15}
+    .metric-card .metric-note{font-size:11px;color:var(--text-muted);margin-top:7px;line-height:1.35}
+    .dashboard-side{
+      display:grid;
+      gap:14px;
+    }
+    .status-board,.dashboard-finance-card{
+      background:linear-gradient(135deg,rgba(30,41,59,.98),rgba(15,23,42,.94));
+      border:1px solid rgba(129,140,248,.22);
+      border-radius:16px;
+      padding:16px;
+      box-shadow:0 18px 45px rgba(0,0,0,.20);
+    }
+    .status-board h3,.dashboard-finance-card h3{font-size:15px;margin-bottom:10px}
+    .status-stack{display:flex;flex-direction:column;gap:9px}
+    .status-line{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding:12px 13px;
+      background:rgba(11,17,32,.72);
+      border:1px solid var(--border);
+      border-radius:13px;
+      box-shadow:inset 5px 0 0 rgba(148,163,184,.6);
+    }
+    .status-line span:first-child{font-size:13px;font-weight:800;color:var(--text)}
+    .status-line strong{font-size:21px;font-weight:900}
+    .status-line.aguardando{box-shadow:inset 5px 0 0 #facc15;border-color:rgba(250,204,21,.45)}
+    .status-line.pendente{box-shadow:inset 5px 0 0 #ff3b30;border-color:rgba(255,59,48,.45)}
+    .status-line.producao{box-shadow:inset 5px 0 0 #00a6ff;border-color:rgba(0,166,255,.45)}
+    .status-line.enviar{box-shadow:inset 5px 0 0 #ff7a00;border-color:rgba(255,122,0,.45)}
+    .status-line.concluido{box-shadow:inset 5px 0 0 #00e676;border-color:rgba(0,230,118,.45)}
+    .dashboard-finance-list{display:grid;gap:8px;margin-top:10px}
+    .dashboard-finance-item{
+      display:flex;justify-content:space-between;gap:12px;
+      padding:10px 0;border-bottom:1px dashed rgba(148,163,184,.22);
+      font-size:13px;
+    }
+    .dashboard-finance-item:last-child{border-bottom:none}
+    .dashboard-finance-item span{color:var(--text-muted)}
+    .dashboard-finance-item strong{font-weight:900}
+
+    .order-row td{font-weight:650}
+    .order-row.aguardando td{background:linear-gradient(90deg,rgba(250,204,21,.46),rgba(250,204,21,.15))!important;border-bottom-color:rgba(250,204,21,.70)!important;box-shadow:inset 5px 0 0 #facc15}
+    .order-row.pendente td{background:linear-gradient(90deg,rgba(255,59,48,.48),rgba(255,59,48,.16))!important;border-bottom-color:rgba(255,59,48,.72)!important;box-shadow:inset 5px 0 0 #ff3b30}
+    .order-row.producao td{background:linear-gradient(90deg,rgba(0,166,255,.46),rgba(0,166,255,.15))!important;border-bottom-color:rgba(0,166,255,.72)!important;box-shadow:inset 5px 0 0 #00a6ff}
+    .order-row.enviar td{background:linear-gradient(90deg,rgba(255,122,0,.50),rgba(255,122,0,.16))!important;border-bottom-color:rgba(255,122,0,.72)!important;box-shadow:inset 5px 0 0 #ff7a00}
+    .order-row.concluido td{background:linear-gradient(90deg,rgba(0,230,118,.42),rgba(0,230,118,.14))!important;border-bottom-color:rgba(0,230,118,.70)!important;box-shadow:inset 5px 0 0 #00e676}
+    .order-row td.sticky-actions{box-shadow:-12px 0 18px rgba(15,23,42,.72), inset 5px 0 0 currentColor!important}
+    .badge.aguardando{background:#facc15;color:#111827;border-color:#fde047;box-shadow:0 0 18px rgba(250,204,21,.45)}
+    .badge.pendente{background:#ff3b30;color:#fff;border-color:#ff6b61;box-shadow:0 0 18px rgba(255,59,48,.45)}
+    .badge.producao{background:#00a6ff;color:#00111f;border-color:#38bdf8;box-shadow:0 0 18px rgba(0,166,255,.45)}
+    .badge.enviar{background:#ff7a00;color:#111827;border-color:#fb923c;box-shadow:0 0 18px rgba(255,122,0,.45)}
+    .badge.concluido{background:#00e676;color:#062b18;border-color:#4ade80;box-shadow:0 0 18px rgba(0,230,118,.42)}
+
+    .client-closing-actions{
+      display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between;
+      background:rgba(79,70,229,.10);border:1px solid rgba(129,140,248,.28);
+      border-radius:12px;padding:10px 12px;margin-bottom:10px;
+    }
+    .client-closing-actions p{font-size:12px;color:var(--text-muted);line-height:1.45;margin:0}
+    .client-closing-buttons{display:flex;gap:8px;flex-wrap:wrap}
+    .client-order-check{width:18px;height:18px;accent-color:var(--success);cursor:pointer}
+    .client-closing-preview{
+      display:none;
+      background:linear-gradient(135deg,rgba(34,197,94,.12),rgba(79,70,229,.10));
+      border:1px solid rgba(34,197,94,.30);
+      border-radius:14px;
+      padding:14px;
+      margin:12px 0;
+    }
+    .client-closing-preview.show{display:block;animation:fadeIn .25s ease}
+    .client-closing-preview h4{color:var(--success)!important;margin-bottom:8px!important}
+
+    @media (max-width:900px){
+      .dashboard-premium{grid-template-columns:1fr}
+      .metric-card{min-height:auto}
+    }
+
   </style>
 </head>
 <body>
@@ -1020,43 +1143,81 @@
     <div class="content">
       <div class="section active" id="s-dashboard">
         <h2 class="section-title">Dashboard</h2>
-        <p class="section-subtitle">Visão geral em tempo real</p>
+        <p class="section-subtitle">Visão geral operacional, financeira e fila de status</p>
 
-        <div class="stats-row">
-          <div class="stat-box"><div class="stat-val" id="stCli" style="color:var(--info)">0</div><div class="stat-lbl">Clientes</div></div>
-          <div class="stat-box"><div class="stat-val" id="stPed" style="color:var(--warning)">0</div><div class="stat-lbl">Pedidos</div></div>
-          <div class="stat-box"><div class="stat-val" id="stPay" style="color:var(--danger)">0</div><div class="stat-lbl">Pendente</div></div>
-          <div class="stat-box"><div class="stat-val" id="stProd" style="color:var(--orange)">0</div><div class="stat-lbl">Produção</div></div>
-          <div class="stat-box"><div class="stat-val" id="stConc" style="color:var(--success)">0</div><div class="stat-lbl">Concluídos</div></div>
-          <div class="stat-box"><div class="stat-val" id="stRec" style="color:var(--primary-light)">R$ 0,00</div><div class="stat-lbl">Receita</div></div>
-        </div>
+        <div class="dashboard-premium">
+          <div class="dashboard-metrics">
+            <div class="metric-card">
+              <div class="metric-ico">👥</div>
+              <div class="metric-lbl">Clientes cadastrados</div>
+              <div class="metric-val" id="stCli" style="color:var(--info)">0</div>
+              <div class="metric-note">Base total de clientes no sistema.</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-ico">📦</div>
+              <div class="metric-lbl">Pedidos totais</div>
+              <div class="metric-val" id="stPed" style="color:var(--warning)">0</div>
+              <div class="metric-note">Todos os pedidos registrados.</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-ico">🟡</div>
+              <div class="metric-lbl">Pedidos aguardando</div>
+              <div class="metric-val" id="stAgu" style="color:#facc15">0</div>
+              <div class="metric-note">Novos pedidos aguardando ação.</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-ico">💸</div>
+              <div class="metric-lbl">Receita confirmada</div>
+              <div class="metric-val" id="stRec" style="color:var(--success)">R$ 0,00</div>
+              <div class="metric-note">Entradas menos saídas confirmadas.</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-ico">⏳</div>
+              <div class="metric-lbl">A receber</div>
+              <div class="metric-val" id="stReceberDash" style="color:var(--orange)">R$ 0,00</div>
+              <div class="metric-note">Soma dos pedidos ainda não concluídos.</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-ico">🧾</div>
+              <div class="metric-lbl">Total em pedidos</div>
+              <div class="metric-val" id="stTotalDash" style="color:var(--primary-light)">R$ 0,00</div>
+              <div class="metric-note">Valor bruto de todos os pedidos.</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-ico">🎯</div>
+              <div class="metric-lbl">Ticket médio</div>
+              <div class="metric-val" id="stTicketDash" style="color:var(--info)">R$ 0,00</div>
+              <div class="metric-note">Média calculada sobre pedidos com valor.</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-ico">✅</div>
+              <div class="metric-lbl">Pedidos concluídos</div>
+              <div class="metric-val" id="stConc" style="color:var(--success)">0</div>
+              <div class="metric-note">Pedidos finalizados e enviados ao histórico.</div>
+            </div>
+          </div>
 
-        <div class="dashboard-grid">
-          <div class="dash-card" onclick="nav('clientes')">
-            <h3>👥 Clientes</h3>
-            <p>Cadastro simplificado e organizado em linha.</p>
-            <div class="count" id="dCli">0</div>
-          </div>
-          <div class="dash-card" onclick="nav('pedidos')">
-            <h3>📦 Pedidos</h3>
-            <p>Lista com status editável e atualização automática.</p>
-            <div class="count" id="dPed">0</div>
-          </div>
-          <div class="dash-card" onclick="nav('custos')">
-            <h3>🧮 Calc 3D</h3>
-            <p>Cálculo para impressão 3D com tempo, material e custos.</p>
-          </div>
-          <div class="dash-card" onclick="nav('financas')">
-            <h3>💰 Finanças</h3>
-            <p>Entradas, saídas, saldo, valores a receber e gráfico completo.</p>
-          </div>
-          <div class="dash-card" onclick="nav('anuncios')">
-            <h3>🤖 Anúncios IA</h3>
-            <p>Monte títulos, descrições e prompts de fotos para marketplaces.</p>
-          </div>
-          <div class="dash-card" onclick="nav('vendas')">
-            <h3>🛍️ Precificação Shopee</h3>
-            <p>Comissão, margem, ROI e faixa ativa de cobrança.</p>
+          <div class="dashboard-side">
+            <div class="status-board">
+              <h3>📌 Fila de status</h3>
+              <div class="status-stack">
+                <div class="status-line aguardando"><span>🟡 Aguardando</span><strong id="dashAgu">0</strong></div>
+                <div class="status-line pendente"><span>🔴 Pendente</span><strong id="stPay">0</strong></div>
+                <div class="status-line producao"><span>🔵 Em produção</span><strong id="stProd">0</strong></div>
+                <div class="status-line enviar"><span>🟠 A enviar</span><strong id="stEnv">0</strong></div>
+                <div class="status-line concluido"><span>🟢 Concluído</span><strong id="dashConc">0</strong></div>
+              </div>
+            </div>
+
+            <div class="dashboard-finance-card">
+              <h3>💰 Resumo financeiro</h3>
+              <div class="dashboard-finance-list">
+                <div class="dashboard-finance-item"><span>Entradas</span><strong id="dashCashIn" style="color:var(--success)">R$ 0,00</strong></div>
+                <div class="dashboard-finance-item"><span>Saídas</span><strong id="dashCashOut" style="color:var(--danger)">R$ 0,00</strong></div>
+                <div class="dashboard-finance-item"><span>Saldo confirmado</span><strong id="dashSaldo" style="color:var(--primary-light)">R$ 0,00</strong></div>
+                <div class="dashboard-finance-item"><span>A receber</span><strong id="dashPendingCash" style="color:var(--orange)">R$ 0,00</strong></div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1687,6 +1848,8 @@
     let lastAdPackageText = '';
     let lastAdPromptsText = '';
     let lastAdTitles = [];
+    let lastClientClosingQuote = '';
+    let lastClientClosingClientId = null;
 
     function fmt(v){
       return Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -2067,7 +2230,8 @@
         total: Number((row.quantidade || 1) * (row.valor_unitario || 0)),
         obs: row.observacoes || '',
         status: normalizeOrderStatus(row.status),
-        d: dbDateToBR(row.criado_em)
+        d: dbDateToBR(row.criado_em),
+        criado: row.criado_em || row.created_at || ''
       };
     }
 
@@ -2584,12 +2748,22 @@
         <div class="client-history-section">
           <h4>📦 Pedidos do cliente</h4>
           ${orders.length ? `
+            <div class="client-closing-actions">
+              <p><strong>Fechamento rápido:</strong> marque os pedidos desejados, gere o resumo com a soma e envie para o cliente.</p>
+              <div class="client-closing-buttons">
+                <button class="btn btn-sm btn-outline" onclick="toggleClientHistoryOrders('${idAttr(clientId)}', true)">Selecionar todos</button>
+                <button class="btn btn-sm btn-outline" onclick="toggleClientHistoryOrders('${idAttr(clientId)}', false)">Limpar</button>
+                <button class="btn btn-sm btn-success" onclick="generateClientClosingBudget('${idAttr(clientId)}')">🧾 Solicitar fechamento</button>
+              </div>
+            </div>
+            <div class="client-closing-preview" id="clientClosingPreview"></div>
             <div style="overflow-x:auto">
               <table>
-                <thead><tr><th>Data</th><th>Produto</th><th>Qtd</th><th>Unitário</th><th>Total</th><th>Status</th><th>Obs</th><th>Ações</th></tr></thead>
+                <thead><tr><th>Sel.</th><th>Data</th><th>Produto</th><th>Qtd</th><th>Unitário</th><th>Total</th><th>Status</th><th>Obs</th><th>Ações</th></tr></thead>
                 <tbody>
                   ${orders.map(o => `
                     <tr class="order-row ${esc(o.status)}">
+                      <td style="text-align:center"><input type="checkbox" class="client-order-check" value="${esc(o.id)}"></td>
                       <td>${esc(o.d || '-')}</td>
                       <td>${esc(o.prod || '-')}</td>
                       <td>${esc(o.qtd || 1)}</td>
@@ -2662,6 +2836,77 @@
       refreshTabNavigation();
     }
 
+
+
+
+    function getCheckedClientHistoryOrders(clientId){
+      const ids = Array.from(document.querySelectorAll('#clientHistoryPanel .client-order-check:checked')).map(el => String(el.value));
+      if(!ids.length) return [];
+      return clientOrders(clientId).filter(o => ids.includes(String(o.id)));
+    }
+
+    function toggleClientHistoryOrders(clientId, checked=true){
+      document.querySelectorAll('#clientHistoryPanel .client-order-check').forEach(el => { el.checked = !!checked; });
+      const preview = document.getElementById('clientClosingPreview');
+      if(preview && !checked){ preview.classList.remove('show'); preview.innerHTML = ''; }
+      refreshTabNavigation();
+    }
+
+    function buildClientClosingMessage(clientId, orders){
+      const client = getClient(clientId) || {};
+      const total = orders.reduce((s,o) => s + orderTotal(o), 0);
+      const lines = orders.map((o, i) => {
+        const totalTxt = orderTotal(o) > 0 ? `R$ ${fmt(orderTotal(o))}` : 'A definir';
+        const unitTxt = Number(o.val || 0) > 0 ? `R$ ${fmt(o.val)}` : 'A definir';
+        return `${i + 1}. ${o.prod || 'Pedido'}\n   Qtd: ${o.qtd || 1} | Unitário: ${unitTxt} | Total: ${totalTxt}`;
+      }).join('\n\n');
+
+      return cleanWhatsAppMessage(`Olá, ${client.nom || 'tudo bem'}!\n\nSegue o fechamento do orçamento com os pedidos selecionados:\n\n${lines}\n\nTOTAL DO FECHAMENTO: R$ ${fmt(total)}\n\nPosso confirmar esse fechamento para dar andamento?`);
+    }
+
+    function generateClientClosingBudget(clientId){
+      const orders = getCheckedClientHistoryOrders(clientId);
+      if(!orders.length){
+        toast('Selecione pelo menos um pedido para gerar o fechamento.', 'error');
+        return;
+      }
+
+      lastClientClosingClientId = clientId;
+      lastClientClosingQuote = buildClientClosingMessage(clientId, orders);
+      const total = orders.reduce((s,o) => s + orderTotal(o), 0);
+      const preview = document.getElementById('clientClosingPreview');
+      if(!preview) return;
+
+      preview.classList.add('show');
+      preview.innerHTML = `
+        <h4>🧾 Resumo do fechamento</h4>
+        <div class="quote-preview">${esc(lastClientClosingQuote).replace(/\n/g, '<br>')}</div>
+        <div class="quote-actions">
+          <button class="btn btn-sm btn-success" onclick="copyClientClosingBudget()">📋 Copiar resumo</button>
+          <button class="btn btn-sm btn-info" onclick="sendClientClosingBudget('${idAttr(clientId)}')">💬 Enviar WhatsApp</button>
+          <span style="font-size:12px;color:var(--text-muted);align-self:center">${orders.length} pedido(s) selecionado(s) • Total R$ ${fmt(total)}</span>
+        </div>
+      `;
+      preview.scrollIntoView({ behavior:'smooth', block:'nearest' });
+      refreshTabNavigation();
+    }
+
+    function copyClientClosingBudget(){
+      if(!lastClientClosingQuote){ toast('Gere o fechamento primeiro.', 'error'); return; }
+      navigator.clipboard.writeText(lastClientClosingQuote).then(() => toast('Resumo copiado!'));
+    }
+
+    function sendClientClosingBudget(clientId){
+      if(!lastClientClosingQuote || String(lastClientClosingClientId) !== String(clientId)){
+        generateClientClosingBudget(clientId);
+        if(!lastClientClosingQuote) return;
+      }
+      const client = getClient(clientId) || {};
+      const normalized = normalizePhoneForWhatsApp(client.tel || '');
+      const cleanMsg = cleanWhatsAppMessage(lastClientClosingQuote);
+      const url = normalized ? `https://wa.me/${normalized}?text=${encodeURIComponent(cleanMsg)}` : `https://wa.me/?text=${encodeURIComponent(cleanMsg)}`;
+      window.open(url, '_blank');
+    }
 
     function fillSelects(){
       const opts = '<option value="">Selecione...</option>' + D.cli.map(c => `<option value="${esc(c.id)}">${esc(c.nom)}</option>`).join('');
@@ -3344,6 +3589,21 @@
       }
     }
 
+
+    function orderStatusRank(status){
+      const order = { aguardando: 1, pendente: 2, producao: 3, enviar: 4, concluido: 5 };
+      return order[status] || 99;
+    }
+
+    function orderSortTimestamp(o){
+      if(o?.criado){
+        const dt = new Date(o.criado);
+        if(validDate(dt)) return dt.getTime();
+      }
+      const br = parseBRDate(o?.d || '');
+      return validDate(br) ? br.getTime() : 0;
+    }
+
     function renderOrders(q=null){
       const searchEl = document.getElementById('oSearch') || document.querySelector('#s-pedidos .search-box');
       const filterEl = document.getElementById('oStatusFilter');
@@ -3362,6 +3622,10 @@
         if(statusFilter === 'todos') return true;
         if(statusFilter === 'ativos') return o.status !== 'concluido';
         return o.status === statusFilter;
+      }).sort((a,b) => {
+        const byStatus = orderStatusRank(a.status) - orderStatusRank(b.status);
+        if(byStatus !== 0) return byStatus;
+        return orderSortTimestamp(b) - orderSortTimestamp(a);
       });
 
       const tb = document.getElementById('tBody');
@@ -3494,12 +3758,25 @@
         }
       });
 
-      const keys = Array.from(new Set([
+      let keys = Array.from(new Set([
         ...Object.keys(maps.entradas),
         ...Object.keys(maps.saidas),
         ...Object.keys(maps.receber),
         ...Object.keys(maps.pedidos)
       ])).sort();
+
+      if(range?.start && range?.end){
+        const spanDays = Math.round((range.end - range.start) / 86400000) + 1;
+        if(spanDays > 0 && spanDays <= 62){
+          keys = [];
+          const cursor = new Date(range.start);
+          cursor.setHours(0,0,0,0);
+          while(cursor <= range.end){
+            keys.push(formatDateInput(cursor));
+            cursor.setDate(cursor.getDate() + 1);
+          }
+        }
+      }
 
       keys.forEach(key => {
         maps.saldo[key] = Number(maps.entradas[key] || 0) - Number(maps.saidas[key] || 0);
@@ -3528,6 +3805,7 @@
       `).join('');
     }
 
+
     function renderFinanceChart(){
       const canvas = document.getElementById('financeChart');
       if(!canvas || !window.Chart) return;
@@ -3543,29 +3821,57 @@
       const valuesFor = key => keys.length ? keys.map(k => maps[key][k] || 0) : [0];
       const datasets = [];
 
-      if(checkboxOn('showEntradas')) datasets.push({ label:'Entradas (R$)', data:valuesFor('entradas'), borderColor:'#22c55e', backgroundColor:'rgba(34,197,94,.12)', borderWidth:3, fill:false, tension:.35, pointRadius:4 });
-      if(checkboxOn('showSaidas')) datasets.push({ label:'Saídas (R$)', data:valuesFor('saidas').map(v => -Math.abs(v)), borderColor:'#ef4444', backgroundColor:'rgba(239,68,68,.12)', borderWidth:3, fill:false, tension:.35, pointRadius:4 });
-      if(checkboxOn('showReceber')) datasets.push({ label:'A receber (R$)', data:valuesFor('receber'), borderColor:'#f59e0b', backgroundColor:'rgba(245,158,11,.12)', borderWidth:3, fill:false, tension:.35, pointRadius:4 });
-      if(checkboxOn('showSaldo')) datasets.push({ label:'Saldo (R$)', data:valuesFor('saldo'), borderColor:'#818cf8', backgroundColor:'rgba(129,140,248,.12)', borderWidth:3, fill:false, tension:.35, pointRadius:4 });
-      if(checkboxOn('showPedidos', false)) datasets.push({ label:'Total em pedidos (R$)', data:valuesFor('pedidos'), borderColor:'#3b82f6', backgroundColor:'rgba(59,130,246,.12)', borderWidth:3, fill:false, tension:.35, pointRadius:4 });
+      if(checkboxOn('showEntradas')) datasets.push({ label:'Entradas (R$)', data:valuesFor('entradas'), backgroundColor:'rgba(34,197,94,.82)', borderColor:'#22c55e', borderWidth:1, borderRadius:8 });
+      if(checkboxOn('showSaidas')) datasets.push({ label:'Saídas (R$)', data:valuesFor('saidas').map(v => -Math.abs(v)), backgroundColor:'rgba(239,68,68,.82)', borderColor:'#ef4444', borderWidth:1, borderRadius:8 });
+      if(checkboxOn('showReceber')) datasets.push({ label:'A receber (R$)', data:valuesFor('receber'), backgroundColor:'rgba(245,158,11,.84)', borderColor:'#f59e0b', borderWidth:1, borderRadius:8 });
+      if(checkboxOn('showSaldo')) datasets.push({ label:'Saldo (R$)', data:valuesFor('saldo'), backgroundColor:'rgba(129,140,248,.82)', borderColor:'#818cf8', borderWidth:1, borderRadius:8 });
+      if(checkboxOn('showPedidos', false)) datasets.push({ label:'Total em pedidos (R$)', data:valuesFor('pedidos'), backgroundColor:'rgba(59,130,246,.82)', borderColor:'#3b82f6', borderWidth:1, borderRadius:8 });
 
       if(!datasets.length){
-        datasets.push({ label:'Nenhum item selecionado', data:[0], borderColor:'#94a3b8', backgroundColor:'rgba(148,163,184,.12)', borderWidth:2, fill:false });
+        datasets.push({ label:'Nenhum item selecionado', data:[0], backgroundColor:'rgba(148,163,184,.55)', borderColor:'#94a3b8', borderWidth:1, borderRadius:8 });
       }
 
+      const financeValueLabels = {
+        id:'financeValueLabels',
+        afterDatasetsDraw(chart){
+          const { ctx } = chart;
+          ctx.save();
+          ctx.font = '800 10px Inter, sans-serif';
+          ctx.fillStyle = '#f8fafc';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          chart.data.datasets.forEach((dataset, datasetIndex) => {
+            const meta = chart.getDatasetMeta(datasetIndex);
+            if(meta.hidden) return;
+            meta.data.forEach((bar, index) => {
+              const raw = Number(dataset.data[index] || 0);
+              if(!raw) return;
+              const y = raw >= 0 ? bar.y - 8 : bar.y + 12;
+              const label = `R$ ${fmt(Math.abs(raw))}`;
+              ctx.fillText(label, bar.x, y);
+            });
+          });
+          ctx.restore();
+        }
+      };
+
       financeChart = new Chart(ctx, {
-        type:'line',
+        type:'bar',
         data:{ labels:labelsSafe, datasets },
+        plugins:[financeValueLabels],
         options:{
           responsive:true,
+          maintainAspectRatio:true,
+          layout:{ padding:{ top:26 } },
           interaction:{ mode:'index', intersect:false },
+          datasets:{ bar:{ barPercentage:.76, categoryPercentage:.72 } },
           plugins:{
             legend:{ labels:{ color:'#f8fafc' } },
-            tooltip:{ callbacks:{ label: item => `${item.dataset.label}: R$ ${fmt(item.raw)}` } }
+            tooltip:{ callbacks:{ label: item => `${item.dataset.label}: R$ ${fmt(Math.abs(item.raw))}` } }
           },
           scales:{
-            x:{ ticks:{ color:'#94a3b8' }, grid:{ color:'rgba(148,163,184,.10)' } },
-            y:{ ticks:{ color:'#94a3b8', callback:value => 'R$ ' + fmt(value) }, grid:{ color:'rgba(148,163,184,.10)' } }
+            x:{ ticks:{ color:'#94a3b8', maxRotation:45, minRotation:0 }, grid:{ color:'rgba(148,163,184,.10)' } },
+            y:{ beginAtZero:true, ticks:{ color:'#94a3b8', callback:value => 'R$ ' + fmt(value) }, grid:{ color:'rgba(148,163,184,.10)' } }
           }
         }
       });
@@ -4340,27 +4646,47 @@ ${lastAdPromptsText}`;
       });
     }
 
+
+    function setText(id, value){
+      const el = document.getElementById(id);
+      if(el) el.textContent = value;
+    }
+
     function updateAll(){
       const t = D.ord.length;
+      const agu = D.ord.filter(o => o.status === 'aguardando').length;
       const ap = D.ord.filter(o => o.status === 'pendente').length;
       const p = D.ord.filter(o => o.status === 'producao').length;
+      const env = D.ord.filter(o => o.status === 'enviar').length;
       const co = D.ord.filter(o => o.status === 'concluido').length;
-      const orderTotal = o => Number(o.total ?? (Number(o.val || 0) * Number(o.qtd || 1)));
+      const orderTotalLocal = o => Number(o.total ?? (Number(o.val || 0) * Number(o.qtd || 1)));
       const cashIn = D.cash.filter(c => c.tipo === 'entrada').reduce((s,c) => s + Number(c.valor || 0), 0);
       const cashOut = D.cash.filter(c => c.tipo === 'saida').reduce((s,c) => s + Number(c.valor || 0), 0);
       const r = cashIn - cashOut;
-      const pendingCash = D.ord.filter(o => o.status !== 'concluido').reduce((s,o) => s + orderTotal(o), 0);
-      const totalCash = D.ord.reduce((s,o) => s + orderTotal(o), 0);
+      const pendingCash = D.ord.filter(o => o.status !== 'concluido').reduce((s,o) => s + orderTotalLocal(o), 0);
+      const totalCash = D.ord.reduce((s,o) => s + orderTotalLocal(o), 0);
+      const paidOrdersWithValue = D.ord.filter(o => orderTotalLocal(o) > 0).length;
+      const avgTicket = paidOrdersWithValue ? totalCash / paidOrdersWithValue : 0;
 
-      document.getElementById('stCli').textContent = D.cli.length;
-      document.getElementById('dCli').textContent = D.cli.length;
-      document.getElementById('stPed').textContent = t;
-      document.getElementById('dPed').textContent = t;
-      const stPay = document.getElementById('stPay');
-      if(stPay) stPay.textContent = ap;
-      document.getElementById('stProd').textContent = p;
-      document.getElementById('stConc').textContent = co;
-      document.getElementById('stRec').textContent = `R$ ${fmt(r)}`;
+      setText('stCli', D.cli.length);
+      setText('dCli', D.cli.length);
+      setText('stPed', t);
+      setText('dPed', t);
+      setText('stAgu', agu);
+      setText('dashAgu', agu);
+      setText('stPay', ap);
+      setText('stProd', p);
+      setText('stEnv', env);
+      setText('stConc', co);
+      setText('dashConc', co);
+      setText('stRec', `R$ ${fmt(r)}`);
+      setText('stReceberDash', `R$ ${fmt(pendingCash)}`);
+      setText('stTotalDash', `R$ ${fmt(totalCash)}`);
+      setText('stTicketDash', `R$ ${fmt(avgTicket)}`);
+      setText('dashCashIn', `R$ ${fmt(cashIn)}`);
+      setText('dashCashOut', `R$ ${fmt(cashOut)}`);
+      setText('dashSaldo', `R$ ${fmt(r)}`);
+      setText('dashPendingCash', `R$ ${fmt(pendingCash)}`);
 
       const cashEntries = document.getElementById('cashEntries');
       const cashOutEl = document.getElementById('cashOut');
