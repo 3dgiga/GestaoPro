@@ -1143,57 +1143,57 @@
     <div class="content">
       <div class="section active" id="s-dashboard">
         <h2 class="section-title">Dashboard</h2>
-        <p class="section-subtitle">Visão geral operacional, financeira e fila de status</p>
+        <p class="section-subtitle"><span id="dashPeriodLabel">Resultado do mês atual</span> — visão operacional, financeira e fila de status</p>
 
         <div class="dashboard-premium">
           <div class="dashboard-metrics">
             <div class="metric-card">
               <div class="metric-ico">👥</div>
-              <div class="metric-lbl">Clientes cadastrados</div>
+              <div class="metric-lbl">Clientes novos no mês</div>
               <div class="metric-val" id="stCli" style="color:var(--info)">0</div>
-              <div class="metric-note">Base total de clientes no sistema.</div>
+              <div class="metric-note">Clientes cadastrados dentro do mês atual.</div>
             </div>
             <div class="metric-card">
               <div class="metric-ico">📦</div>
-              <div class="metric-lbl">Pedidos totais</div>
+              <div class="metric-lbl">Pedidos do mês</div>
               <div class="metric-val" id="stPed" style="color:var(--warning)">0</div>
-              <div class="metric-note">Todos os pedidos registrados.</div>
+              <div class="metric-note">Pedidos criados dentro do mês atual.</div>
             </div>
             <div class="metric-card">
               <div class="metric-ico">🟡</div>
               <div class="metric-lbl">Pedidos aguardando</div>
               <div class="metric-val" id="stAgu" style="color:#facc15">0</div>
-              <div class="metric-note">Novos pedidos aguardando ação.</div>
+              <div class="metric-note">Pedidos aguardando ação dentro do mês.</div>
             </div>
             <div class="metric-card">
               <div class="metric-ico">💸</div>
               <div class="metric-lbl">Receita confirmada</div>
               <div class="metric-val" id="stRec" style="color:var(--success)">R$ 0,00</div>
-              <div class="metric-note">Entradas menos saídas confirmadas.</div>
+              <div class="metric-note">Entradas menos saídas confirmadas no mês.</div>
             </div>
             <div class="metric-card">
               <div class="metric-ico">⏳</div>
               <div class="metric-lbl">A receber</div>
               <div class="metric-val" id="stReceberDash" style="color:var(--orange)">R$ 0,00</div>
-              <div class="metric-note">Soma dos pedidos ainda não concluídos.</div>
+              <div class="metric-note">Pedidos do mês ainda não concluídos.</div>
             </div>
             <div class="metric-card">
               <div class="metric-ico">🧾</div>
               <div class="metric-lbl">Total em pedidos</div>
               <div class="metric-val" id="stTotalDash" style="color:var(--primary-light)">R$ 0,00</div>
-              <div class="metric-note">Valor bruto de todos os pedidos.</div>
+              <div class="metric-note">Valor bruto dos pedidos do mês.</div>
             </div>
             <div class="metric-card">
               <div class="metric-ico">🎯</div>
               <div class="metric-lbl">Ticket médio</div>
               <div class="metric-val" id="stTicketDash" style="color:var(--info)">R$ 0,00</div>
-              <div class="metric-note">Média calculada sobre pedidos com valor.</div>
+              <div class="metric-note">Média dos pedidos com valor no mês.</div>
             </div>
             <div class="metric-card">
               <div class="metric-ico">✅</div>
               <div class="metric-lbl">Pedidos concluídos</div>
               <div class="metric-val" id="stConc" style="color:var(--success)">0</div>
-              <div class="metric-note">Pedidos finalizados e enviados ao histórico.</div>
+              <div class="metric-note">Pedidos finalizados dentro do mês atual.</div>
             </div>
           </div>
 
@@ -1225,13 +1225,13 @@
 
       <div class="section" id="s-financas">
         <h2 class="section-title">💰 Finanças</h2>
-        <p class="section-subtitle">Entradas, saídas, saldo, valores a receber e filtros por período</p>
+        <p class="section-subtitle"><span id="financePeriodLabel">Resumo do mês atual</span> — entradas, saídas, saldo, valores a receber e filtros por período</p>
 
         <div class="cashflow-card">
           <div class="cashflow-top">
             <div>
               <h3>💰 Fluxo de Caixa</h3>
-              <p>Entradas vêm dos pedidos concluídos; saídas vêm dos lançamentos do fluxo de caixa; a receber vem dos pedidos ainda não concluídos.</p>
+              <p>Os cards abaixo mostram somente o mês atual. O gráfico e a tabela continuam permitindo filtro por dia, semana, mês, ano, todos ou período personalizado.</p>
             </div>
             <button class="btn btn-sm btn-outline" onclick="nav('pedidos')">Ver pedidos</button>
           </div>
@@ -1253,11 +1253,11 @@
               <div class="val" id="cashPending" style="color:var(--warning)">R$ 0,00</div>
             </div>
             <div class="cashflow-mini">
-              <div class="lbl">Pedidos concluídos</div>
+              <div class="lbl">Pedidos concluídos no mês</div>
               <div class="val" id="cashCompletedCount" style="color:var(--success)">0</div>
             </div>
             <div class="cashflow-mini">
-              <div class="lbl">Total em pedidos</div>
+              <div class="lbl">Total em pedidos no mês</div>
               <div class="val" id="cashTotalOrders" style="color:var(--info)">R$ 0,00</div>
             </div>
           </div>
@@ -1294,7 +1294,7 @@
 
         <div class="table-container">
           <div class="table-header">
-            <h3>📋 Dados financeiros do período</h3>
+            <h3>📋 Dados financeiros do período selecionado</h3>
             <button class="btn btn-sm btn-outline" onclick="applyChartFilter()">Atualizar</button>
           </div>
           <div style="overflow-x:auto">
@@ -3806,13 +3806,61 @@
     }
 
 
+    function sumFinanceMap(map){
+      return Object.values(map || {}).reduce((sum, value) => sum + Number(value || 0), 0);
+    }
+
+    function financeRangeLabel(filter, startDate, endDate){
+      const range = getDateRange(filter, startDate, endDate);
+      const br = d => validDate(d) ? d.toLocaleDateString('pt-BR') : '';
+      if(filter === 'dia') return `Resumo de hoje (${br(range.start)})`;
+      if(filter === 'semana') return `Resumo dos últimos 7 dias (${br(range.start)} a ${br(range.end)})`;
+      if(filter === 'mes'){
+        const label = range.start.toLocaleDateString('pt-BR', { month:'long', year:'numeric' });
+        return `Resumo de ${label}`;
+      }
+      if(filter === 'ano') return `Resumo de ${range.start.getFullYear()}`;
+      if(filter === 'personalizado'){
+        if(range.start && range.end) return `Resumo de ${br(range.start)} a ${br(range.end)}`;
+        if(range.start) return `Resumo a partir de ${br(range.start)}`;
+        if(range.end) return `Resumo até ${br(range.end)}`;
+      }
+      return 'Resumo de todo o período';
+    }
+
+    function updateCashflowSummaryForFilter(filter, startDate, endDate, financeData){
+      const data = financeData || getFinanceData(filter, startDate, endDate);
+      const range = getDateRange(filter, startDate, endDate);
+      const cashIn = sumFinanceMap(data.maps.entradas);
+      const cashOut = sumFinanceMap(data.maps.saidas);
+      const pendingCash = sumFinanceMap(data.maps.receber);
+      const totalOrders = sumFinanceMap(data.maps.pedidos);
+      const completedCount = D.cash.filter(c => c.tipo === 'entrada' && c.pedido_id && inRange(cashDate(c), range)).length;
+      const saldo = cashIn - cashOut;
+
+      setText('financePeriodLabel', financeRangeLabel(filter, startDate, endDate));
+      setText('cashEntries', `R$ ${fmt(cashIn)}`);
+      setText('cashOut', `R$ ${fmt(cashOut)}`);
+      setText('cashConfirmed', `R$ ${fmt(saldo)}`);
+      setText('cashPending', `R$ ${fmt(pendingCash)}`);
+      setText('cashCompletedCount', completedCount);
+      setText('cashTotalOrders', `R$ ${fmt(totalOrders)}`);
+    }
+
+
     function renderFinanceChart(){
-      const canvas = document.getElementById('financeChart');
-      if(!canvas || !window.Chart) return;
       const filter = document.getElementById('chartFilter')?.value || 'mes';
       const start = document.getElementById('chartStart')?.value || '';
       const end = document.getElementById('chartEnd')?.value || '';
-      const { labels, maps, keys } = getFinanceData(filter, start, end);
+      const financeData = getFinanceData(filter, start, end);
+      const { labels, maps, keys } = financeData;
+      updateCashflowSummaryForFilter(filter, start, end, financeData);
+
+      const canvas = document.getElementById('financeChart');
+      if(!canvas || !window.Chart){
+        renderFinanceRows(filter, start, end);
+        return;
+      }
       const ctx = canvas.getContext('2d');
 
       if(financeChart) financeChart.destroy();
@@ -4653,29 +4701,43 @@ ${lastAdPromptsText}`;
     }
 
     function updateAll(){
-      const t = D.ord.length;
-      const agu = D.ord.filter(o => o.status === 'aguardando').length;
-      const ap = D.ord.filter(o => o.status === 'pendente').length;
-      const p = D.ord.filter(o => o.status === 'producao').length;
-      const env = D.ord.filter(o => o.status === 'enviar').length;
-      const co = D.ord.filter(o => o.status === 'concluido').length;
+      const monthRange = getDateRange('mes');
+      const monthLabel = monthRange.start
+        ? monthRange.start.toLocaleDateString('pt-BR', { month:'long', year:'numeric' })
+        : 'mês atual';
+
+      const inCurrentMonth = dt => inRange(dt, monthRange);
       const orderTotalLocal = o => Number(o.total ?? (Number(o.val || 0) * Number(o.qtd || 1)));
-      const cashIn = D.cash.filter(c => c.tipo === 'entrada').reduce((s,c) => s + Number(c.valor || 0), 0);
-      const cashOut = D.cash.filter(c => c.tipo === 'saida').reduce((s,c) => s + Number(c.valor || 0), 0);
+
+      const monthClients = D.cli.filter(c => inCurrentMonth(parseBRDate(c.d))).length;
+      const monthOrders = D.ord.filter(o => inCurrentMonth(orderDateForFinance(o)));
+      const monthCash = D.cash.filter(c => inCurrentMonth(cashDate(c)));
+
+      const t = monthOrders.length;
+      const agu = monthOrders.filter(o => o.status === 'aguardando').length;
+      const ap = monthOrders.filter(o => o.status === 'pendente').length;
+      const prod = monthOrders.filter(o => o.status === 'producao').length;
+      const env = monthOrders.filter(o => o.status === 'enviar').length;
+      const co = monthOrders.filter(o => o.status === 'concluido').length;
+
+      const cashIn = monthCash.filter(c => c.tipo === 'entrada').reduce((s,c) => s + Number(c.valor || 0), 0);
+      const cashOut = monthCash.filter(c => c.tipo === 'saida').reduce((s,c) => s + Number(c.valor || 0), 0);
       const r = cashIn - cashOut;
-      const pendingCash = D.ord.filter(o => o.status !== 'concluido').reduce((s,o) => s + orderTotalLocal(o), 0);
-      const totalCash = D.ord.reduce((s,o) => s + orderTotalLocal(o), 0);
-      const paidOrdersWithValue = D.ord.filter(o => orderTotalLocal(o) > 0).length;
+      const pendingCash = monthOrders.filter(o => o.status !== 'concluido').reduce((s,o) => s + orderTotalLocal(o), 0);
+      const totalCash = monthOrders.reduce((s,o) => s + orderTotalLocal(o), 0);
+      const paidOrdersWithValue = monthOrders.filter(o => orderTotalLocal(o) > 0).length;
       const avgTicket = paidOrdersWithValue ? totalCash / paidOrdersWithValue : 0;
 
-      setText('stCli', D.cli.length);
-      setText('dCli', D.cli.length);
+      setText('dashPeriodLabel', `Resultado de ${monthLabel}`);
+      setText('financePeriodLabel', `Resumo de ${monthLabel}`);
+      setText('stCli', monthClients);
+      setText('dCli', monthClients);
       setText('stPed', t);
       setText('dPed', t);
       setText('stAgu', agu);
       setText('dashAgu', agu);
       setText('stPay', ap);
-      setText('stProd', p);
+      setText('stProd', prod);
       setText('stEnv', env);
       setText('stConc', co);
       setText('dashConc', co);
